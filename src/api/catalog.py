@@ -15,7 +15,7 @@ def get_catalog():
         result = connection.execute(sqlalchemy.text("SELECT num_green_potion FROM global_inventory"))
 
         for row in result:
-            total_green_potions = row[2]
+            total_green_potions = row[0]
 
     return [
             {
