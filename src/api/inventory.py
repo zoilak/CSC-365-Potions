@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+#from pydantic import BaseModel
+import pydantic
 from src.api import auth
 import math
 import sqlalchemy
@@ -31,7 +32,7 @@ def get_capacity_plan():
         "ml_capacity": 0
         }
 
-class CapacityPurchase(BaseModel):
+class CapacityPurchase(pydantic.BaseModel):
     potion_capacity: int
     ml_capacity: int
 

@@ -23,10 +23,9 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).fetchone()
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).one()
         
-        for row in result:
-            total_green_ml = row[1]
+        total_green_ml = result.num_green_ml
 
     total_green_potions = total_green_ml//100
 
@@ -46,12 +45,12 @@ def get_bottle_plan():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory" )).fetchone
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potion FROM global_inventory" )).one()
         
-        for row in result:
-            num_g_potions = row[0]
+        total_green_potions = result.num_green_potion
+        total_green_ml = result.num_green_ml
 
-        total_green_potions = num_g_potions // 100
+        total_green_potions = total_green_ml // 100
 
         if total_green_potions == 0:
             return []
