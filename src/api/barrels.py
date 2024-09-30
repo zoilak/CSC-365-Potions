@@ -65,11 +65,11 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     if barrel.price <= gold and barrel.sku == "SMALL_GREEN_BARREL":
                         gold_price-=barrel.price #reuce the amount of gold used to purchase
                         updated_barrel_qty +=1
-                        
+
                 return [
                             {
                                 #"sku": "SMALL_RED_BARREL",
-                                "sku" : barrel.sku
+                                "sku" : "SMALL_GREEN_BARREL"
                                 "quantity": updated_barrel_qty,  #update the barrel quantity
                             }
                         ]
