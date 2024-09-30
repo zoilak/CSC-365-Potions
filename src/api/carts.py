@@ -85,6 +85,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
     return "OK"
 
 
+carts {}
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
@@ -98,7 +99,11 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     
-    #for item in cart_item:
+    for order in carts[cart_id]:
+        if order[0]==item_sku:
+            order[1] = cart_item.quantity
+    
+    carts[cart_id].append([item_sku, cart_item.quantity])
         
     
     """ """
@@ -117,5 +122,24 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    global carts
 
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("SELCET * FROM global_inventory")).one()
+
+        green_potions = result.num_green_potions
+        gold_count = result.gold
+
+        bought = carts[cart_id][0][1]
+
+        if bought <=green_potions:
+            green_potions-=bought
+            gold_count+= (bought * 50)
+        
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {green_potions}"))
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = {gold_count}"))
+
+    #need to create a local counter and cart 
+        return {"total_potions_bought": bought, "total_gold_paid": 20 * bought}
+    #else
+    return {"total_potions_bought": 0, "total_gold_paid": 0}

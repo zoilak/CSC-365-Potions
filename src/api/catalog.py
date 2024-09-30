@@ -12,10 +12,10 @@ def get_catalog():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_potion FROM global_inventory"))
+        result = connection.execute(sqlalchemy.text("SELECT num_green_potion FROM global_inventory")).one()
 
-        for row in result:
-            total_green_potions = row[0]
+        
+        total_green_potions = result.num_green_potions
 
     if total_green_potions >=1:
 

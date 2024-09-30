@@ -27,15 +27,16 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         
         total_green_ml = result.num_green_ml
 
-    total_green_potions = total_green_ml//100
+    total_green_potions = total_green_ml // 100
 
-    total_green_ml -= total_green_potions *100
-
-    with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = total_green_ml"))
+    total_green_ml -= total_green_potions * 100
 
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = total_green_potions"))
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {total_green_ml}"))
+
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {total_green_potions}"))
+        
     return "OK"
 
 @router.post("/plan")
