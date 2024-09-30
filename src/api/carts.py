@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
+import sqlalchemy
+from src import database as db
+
 
 router = APIRouter(
     prefix="/carts",
@@ -94,9 +97,14 @@ class CartItem(BaseModel):
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
+    
+    
     """ """
-
-    return "OK"
+    # with connection open
+    #     ask database for something
+    #     psuh data into database
+    #     find out what to return in json
+    # return "OK"
 
 
 class CartCheckout(BaseModel):
