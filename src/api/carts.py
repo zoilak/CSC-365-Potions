@@ -87,7 +87,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
     return "OK"
 
 #local data for cart storage
-carts: Dict[int, List[Tuple[str, int]]] = {}  # cart_id: [[item_sku, quantity]]
+carts: Dict = {}  # cart_id: [[item_sku, quantity]]
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
@@ -106,29 +106,19 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     Set the quantity for a specific item in the cart.
     If the item exists, it updates the quantity; otherwise, it adds the item.
     """
-    if cart_id not in carts:
-        raise HTTPException(status_code=404, detail="Cart not found")
     
-    for idx, (sku, qty) in enumerate(carts[cart_id]):
-        if sku == item_sku:
-            carts[cart_id][idx] = (item_sku, cart_item.quantity)  # Update tuple
+    
+    #check if it exits and if found update it 
+    for order in carts[cart_id]:
+        if order[0]==item_sku:
+            order[1] = cart_item.quantity
             return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
-
-    # If item is not in the cart, append it as a new entry
-    carts[cart_id].append((item_sku, cart_item.quantity))  # Add tuple
+    
+    
+    
+    #if not found append as new entry
+    carts[cart_id].append([item_sku, cart_item.quantity])
     return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
-    
-    # #check if it exits and if found update it 
-    # for order in carts[cart_id]:
-    #     if order[0]==item_sku:
-    #         order[1] = cart_item.quantity
-    #         return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
-    
-    
-    
-    # #if not found append as new entry
-    # carts[cart_id].append([item_sku, cart_item.quantity])
-    # return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
         
     
     """ """
@@ -158,7 +148,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
         green_potions_bought = 0
         gold_paid = 0
-        potion_cost = 40 
+        potion_cost = 50 
 
         #bought = carts[cart_id][0][1]
 
