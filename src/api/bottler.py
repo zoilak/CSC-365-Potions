@@ -23,18 +23,24 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).one()
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potions FROM global_inventory")).one()
         
         total_green_ml = result.num_green_ml
+        total_green_potions = result.num_green_potions
 
-        total_green_potions = total_green_ml // 100
+        for potion in potions_delivered:
+            if potion.potion_type == [0, 1, 0, 0]:
+                total_green_potions += potion.quantity
+                total_green_ml -= (potion.quantity * 100)
 
-        total_green_ml -= total_green_potions * 100
+        # total_green_potions = total_green_ml // 100
 
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {total_green_ml}"))
+        # total_green_ml -= total_green_potions * 100
+
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {}".format(total_green_ml)))
 
     
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {total_green_potions}"))
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {}".format(total_green_potions)))
         
     return "OK"
 
@@ -45,15 +51,18 @@ def get_bottle_plan():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potion FROM global_inventory" )).one()
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potions FROM global_inventory" )).one()
         
-        total_green_potions = result.num_green_potion
-        total_green_ml = result.num_green_ml
+        num_green_ml = result.num_green_ml
+        quantity_count = 0
 
-        total_green_potions = total_green_ml // 100
 
-        if total_green_potions == 0:
-            return []
+        #make all bottles into barrels
+        while num_green_ml >= 100:
+            num_green_ml-=100
+            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {}".format(num_green_ml)))
+            quantity_count += 1
+
     # Each bottle has a quantity of what proportion of red, blue, and
     # green potion to add.
     # Expressed in integers from 1 to 100 that must sum up to 100.
@@ -64,7 +73,7 @@ def get_bottle_plan():
             {
                 "potion_type": [0, 100, 0, 0],
                 #"quantity": 5,
-                "quantity": total_green_potions,
+                "quantity": quantity_count,
             }
         ]
 

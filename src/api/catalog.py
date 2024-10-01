@@ -12,7 +12,7 @@ def get_catalog():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_potion FROM global_inventory")).one()
+        result = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).one()
 
         
         total_green_potions = result.num_green_potions
@@ -24,7 +24,7 @@ def get_catalog():
                     "sku": "GREEN_POTION_0",
                     "name": "green potion",
                     "quantity": total_green_potions,
-                    "price": 50,
+                    "price": 30,    #lower price so they sell
                     "potion_type": [0, 100, 0, 0],
                 }
             ]

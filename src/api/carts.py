@@ -110,14 +110,18 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     
     #check if it exits and if found update it 
     for order in carts[cart_id]:
+
         if order[0]==item_sku:
+
             order[1] = cart_item.quantity
+
             return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
     
     
     
     #if not found append as new entry
     carts[cart_id].append([item_sku, cart_item.quantity])
+    
     return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
         
     
@@ -153,18 +157,24 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         #bought = carts[cart_id][0][1]
 
         for item_sku, quantity in carts[cart_id]:
+
             if "potion" in item_sku.lower():
+
                 if quantity <= green_potions:
-                    green_potions-=quantity
-                    gold_paid+=quantity*potion_cost
-                    green_potions_bought +=quantity
+
+                    green_potions -= quantity
+                    gold_paid += quantity * potion_cost
+                    green_potions_bought += quantity
+
             else:
+
                 return {}
 
         # if bought <=green_potions:
         #     green_potions-=bought
         #     gold_count+= (bought * 50)
         final_gold = gold_count + gold_paid
+
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
 
