@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from typing import Dict, List, Tuple
 from src.api import auth
 from enum import Enum
 import sqlalchemy
@@ -75,6 +76,7 @@ class Customer(BaseModel):
     character_class: str
     level: int
 
+
 @router.post("/visits/{visit_id}")
 def post_visits(visit_id: int, customers: list[Customer]):
     """
@@ -84,12 +86,14 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
     return "OK"
 
-
-carts {}
+#local data for cart storage
+carts: Dict[int, List[Tuple[str, int]]] = {}  # cart_id: [[item_sku, quantity]]
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    return {"cart_id": 1}
+    cart_id = len(carts) +1
+    carts[cart_id] = []
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
@@ -98,12 +102,33 @@ class CartItem(BaseModel):
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
+    """
+    Set the quantity for a specific item in the cart.
+    If the item exists, it updates the quantity; otherwise, it adds the item.
+    """
+    if cart_id not in carts:
+        raise HTTPException(status_code=404, detail="Cart not found")
     
-    for order in carts[cart_id]:
-        if order[0]==item_sku:
-            order[1] = cart_item.quantity
+    for idx, (sku, qty) in enumerate(carts[cart_id]):
+        if sku == item_sku:
+            carts[cart_id][idx] = (item_sku, cart_item.quantity)  # Update tuple
+            return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
+
+    # If item is not in the cart, append it as a new entry
+    carts[cart_id].append((item_sku, cart_item.quantity))  # Add tuple
+    return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
     
-    carts[cart_id].append([item_sku, cart_item.quantity])
+    # #check if it exits and if found update it 
+    # for order in carts[cart_id]:
+    #     if order[0]==item_sku:
+    #         order[1] = cart_item.quantity
+    #         return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
+    
+    
+    
+    # #if not found append as new entry
+    # carts[cart_id].append([item_sku, cart_item.quantity])
+    # return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
         
     
     """ """
@@ -121,8 +146,9 @@ class CartCheckout(BaseModel):
 
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
-    """ """
-    global carts
+    """
+    Finalize the cart and check if the purchase can be completed.
+    """
 
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELCET * FROM global_inventory")).one()
@@ -130,16 +156,28 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         green_potions = result.num_green_potions
         gold_count = result.gold
 
-        bought = carts[cart_id][0][1]
+        green_potions_bought = 0
+        gold_paid = 0
+        potion_cost = 40 
 
-        if bought <=green_potions:
-            green_potions-=bought
-            gold_count+= (bought * 50)
-        
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {green_potions}"))
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = {gold_count}"))
+        #bought = carts[cart_id][0][1]
+
+        for item_sku, quantity in carts[cart_id]:
+            if "potion" in item_sku.lower():
+                if quantity <= green_potions:
+                    green_potions-=quantity
+                    gold_paid+=quantity*potion_cost
+                    green_potions_bought +=quantity
+            else:
+                return {}
+
+        # if bought <=green_potions:
+        #     green_potions-=bought
+        #     gold_count+= (bought * 50)
+        final_gold = gold_count + gold_paid
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
 
     #need to create a local counter and cart 
-        return {"total_potions_bought": bought, "total_gold_paid": 20 * bought}
-    #else
-    return {"total_potions_bought": 0, "total_gold_paid": 0}
+    return {"total_potions_bought": green_potions_bought, "total_gold_paid": gold_paid}
+   
