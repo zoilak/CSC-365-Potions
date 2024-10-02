@@ -145,7 +145,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELCET * FROM global_inventory")).one()
+        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
 
         green_potions = result.num_green_potions
         gold_count = result.gold
