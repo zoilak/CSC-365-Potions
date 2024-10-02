@@ -23,15 +23,34 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potions FROM global_inventory")).one()
+        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
         
+        #green stuff
         total_green_ml = result.num_green_ml
         total_green_potions = result.num_green_potions
 
+        # #red stuff
+        # total_red_ml = result.num_red_ml
+        # total_red_potions = result.num_red_potions
+
+        # #blue stuff
+        # total_blue_ml = result.num_blue_ml
+        # total_blue_potions = result.num_blue_potions
+
+
         for potion in potions_delivered:
+            
             if potion.potion_type == [0, 1, 0, 0]:
                 total_green_potions += potion.quantity
                 total_green_ml -= (potion.quantity * 100)
+
+            # if potion.potion_type == [1, 0, 0, 0]:
+            #     total_green_potions += potion.quantity
+            #     total_green_ml -= (potion.quantity * 100)
+
+            # if potion.potion_type == [1, 0, 0, 0]:
+            #     total_green_potions += potion.quantity
+            #     total_green_ml -= (potion.quantity * 100)
 
         # total_green_potions = total_green_ml // 100
 
