@@ -60,7 +60,7 @@ def get_bottle_plan():
         #make all bottles into barrels
         while num_green_ml >= 100:
             num_green_ml-=100
-            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {}".format(num_green_ml)))
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {num_green_ml}"))
             quantity_count += 1
 
     # Each bottle has a quantity of what proportion of red, blue, and
