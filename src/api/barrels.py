@@ -56,22 +56,24 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
         green_potions = result.num_green_potions
         gold_price = result.gold
-        
+        barrels_to_purchase = []
+
         if  green_potions < 10:
                 
             for barrel in wholesale_catalog:
                 if barrel.price <= gold_price and barrel.sku == "SMALL_GREEN_BARREL":
                     gold_price-=barrel.price #reuce the amount of gold used to purchase
                     updated_barrel_qty +=1
-
-            return [
-                        {
-                                    #"sku": "SMALL_RED_BARREL",
-                            "sku" : "SMALL_GREEN_BARREL",
-                            "quantity": updated_barrel_qty,  #update the barrel quantity
-                        }
-                    ]
+            if updated_barrel_qty > 0:
+                barrels_to_purchase.append(
+                            {
+                                        #"sku": "SMALL_RED_BARREL",
+                                "sku" : "SMALL_GREEN_BARREL",
+                                "quantity": updated_barrel_qty,  #update the barrel quantity
+                            }
+                )
                             
         #cannot afford
-        return []
+        print(f"barrels purchasing: {barrels_to_purchase}")
+        return barrels_to_purchase
 

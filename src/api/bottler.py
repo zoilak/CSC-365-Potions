@@ -36,11 +36,11 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         # total_green_potions = total_green_ml // 100
 
         # total_green_ml -= total_green_potions * 100
-
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {}".format(total_green_ml)))
+        print(f"delivering bottles green_ml: {total_green_ml}, green potions: {total_green_potions}")
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {total_green_ml}"))
 
     
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = {}".format(total_green_potions)))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = {total_green_potions}"))
         
     return "OK"
 
@@ -60,7 +60,7 @@ def get_bottle_plan():
         #make all bottles into barrels
         while num_green_ml >= 100:
             num_green_ml-=100
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = {}".format(num_green_ml)))
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {}".format(num_green_ml)))
             quantity_count += 1
 
     # Each bottle has a quantity of what proportion of red, blue, and
@@ -72,7 +72,6 @@ def get_bottle_plan():
     return [
             {
                 "potion_type": [0, 100, 0, 0],
-                #"quantity": 5,
                 "quantity": quantity_count,
             }
         ]
