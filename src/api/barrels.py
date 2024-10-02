@@ -64,7 +64,10 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 if barrel.price <= gold_price and barrel.sku == "SMALL_GREEN_BARREL":
                     gold_price-=barrel.price #reuce the amount of gold used to purchase
                     updated_barrel_qty +=1
+
             if updated_barrel_qty > 0:
+                
+                #small & green
                 barrels_to_purchase.append(
                             {
                                         #"sku": "SMALL_RED_BARREL",
@@ -72,8 +75,73 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 "quantity": updated_barrel_qty,  #update the barrel quantity
                             }
                 )
+
+                # #small & red
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"SMALL_RED_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #small & blue
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"SMALL_BLUE_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #mini and red
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"MINI_RED_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #mini and green
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"MINI_GREEN_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #mini and blue
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"MINI_BLUE_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #large and dark
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"LARGE_DARK_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #large and blue
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"LARGE_BLUE_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #large and green
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"LARGE_GREEN_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
+                # #large and red
+                # barrels_to_purchase.append(
+                #     {
+                #     "sku" :"LARGE_RED_BARREL",
+                #     "quantity" : updated_barrel_qty,
+                # })
+
                             
         #cannot afford
         print(f"barrels purchasing: {barrels_to_purchase}")
+
         return barrels_to_purchase
 

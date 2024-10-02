@@ -106,8 +106,6 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     Set the quantity for a specific item in the cart.
     If the item exists, it updates the quantity; otherwise, it adds the item.
     """
-    
-    
     #check if it exits and if found update it 
     for order in carts[cart_id]:
 
@@ -116,8 +114,6 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
             order[1] = cart_item.quantity
 
             return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
-    
-    
     
     #if not found append as new entry
     carts[cart_id].append([item_sku, cart_item.quantity])
@@ -143,6 +139,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
     Finalize the cart and check if the purchase can be completed.
     """
+    #global carts
+
+    #debugging statement
+    print("cart payment:" , cart_checkout.payment)
 
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
@@ -152,9 +152,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
         green_potions_bought = 0
         gold_paid = 0
-        potion_cost = 10 
+        potion_cost = 20 
 
-        #bought = carts[cart_id][0][1]
+        #quantity = carts[cart_id][0][1]
+       
 
         for item_sku, quantity in carts[cart_id]:
 
@@ -165,19 +166,18 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                     green_potions -= quantity
                     gold_paid += quantity * potion_cost
                     green_potions_bought += quantity
+                    
 
             else:
-
+                print("nothing purchased")
                 return {}
 
-        # if bought <=green_potions:
-        #     green_potions-=bought
-        #     gold_count+= (bought * 50)
         final_gold = gold_count + gold_paid
 
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
         connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
 
     #need to create a local counter and cart 
+    print("purchase successful")
     return {"total_potions_bought": green_potions_bought, "total_gold_paid": gold_paid}
    
