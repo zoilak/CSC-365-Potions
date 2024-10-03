@@ -152,7 +152,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
         green_potions_bought = 0
         gold_paid = 0
-        potion_cost = 50 
+        potion_cost = 30 
 
         #quantity = carts[cart_id][0][1]
        

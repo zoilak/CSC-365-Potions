@@ -52,6 +52,10 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             #     total_green_potions += potion.quantity
             #     total_green_ml -= (potion.quantity * 100)
 
+            # if potion.potion_type == [0, 0, 0, 1]:
+            #     total_green_potions += potion.quantity
+            #     total_green_ml -= (potion.quantity * 100)
+
         # total_green_potions = total_green_ml // 100
 
         # total_green_ml -= total_green_potions * 100
