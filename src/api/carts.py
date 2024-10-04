@@ -181,7 +181,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                     gold_paid += quantity * potion_cost
                     green_potions_bought += quantity
 
-            if "blue" in item_sku.lower:
+            elif "blue" in item_sku.lower:
                
                 if quantity <= blue_potions:
 
@@ -189,7 +189,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                     gold_paid += quantity * potion_cost
                     blue_potions_bought += quantity 
 
-            if "red" in item_sku.lower:
+            elif "red" in item_sku.lower:
                
                 if quantity <= red_potions:
 

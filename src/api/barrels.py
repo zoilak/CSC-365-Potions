@@ -41,19 +41,19 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 
         for barrel in barrels_delivered:
             if "green" in barrel.sku:
-                barrel_green_ml += barrel.ml_per_barrel
+                barrel_green_ml += barrel.ml_per_barrel * barrel.quantity
                 gold_price-= barrel.price
             
             elif "red" in barrel.sku:
-                barrel_blue_ml += barrel.ml_per_barrel
+                barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
                 gold_price-= barrel.price
             
             elif "blue" in barrel.sku:
-                barrel_blue_ml += barrel.ml_per_barrel
+                barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
                 gold_price-= barrel.price
 
             elif "dark" in barrel.sku:
-                barrel_dark_ml += barrel.ml_per_barrel
+                barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
                 gold_price -= barrel.price
 
     

@@ -32,27 +32,27 @@ def get_catalog():
                 }
             ]
     
-    # if total_red_potions >=1:
-    #     return [
-    #                 {
-    #                     "sku": "RED_POTION_0",
-    #                     "name": "red potion",
-    #                     "quantity": total_red_potions,
-    #                     "price": 10,    #lower price so they sell
-    #                     "potion_type": [100, 0, 0, 0],
-    #                 }
-    #             ]
+    if total_blue_potions >=1:
+        return [
+                    {
+                        "sku": "BLUE_POTION_0",
+                        "name": "blue potion",
+                        "quantity": total_blue_potions,
+                        "price": 60,    #lower price so they sell
+                        "potion_type": [100, 0, 0, 0],
+                    }
+                ]
     
-    # if total_blue_potions >=1:
-    #     return [
-    #                 {
-    #                     "sku": "BLUE_POTION_0",
-    #                     "name": "blue potion",
-    #                     "quantity": total_blue_potions,
-    #                     "price": 10,    #lower price so they sell
-    #                     "potion_type": [0, 0, 100, 0],
-    #                 }
-    #             ]
+    if total_red_potions >=1:
+        return [
+                    {
+                        "sku": "RED_POTION_0",
+                        "name": "red potion",
+                        "quantity": total_red_potions,
+                        "price": 60,    #lower price so they sell
+                        "potion_type": [0, 0, 100, 0],
+                    }
+                ]
     
 
         
