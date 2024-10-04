@@ -37,7 +37,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 
         barrel_ml = 0
         
-        gold_price = result.gold
+        gold_price = int(result.gold)
 
         for barrel in barrels_delivered:
             if "green" in barrel.sku:
@@ -80,18 +80,18 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         updated_barrel_qty = 0
 
 
-        green_potions = result.num_green_potions
+        green_potions = int(result.num_green_potions)
         # red_potions = result.num_red_potions
         # blue_potions = result.num_blue_potions
 
 
-        gold_price = result.gold
+        gold_price = int(result.gold)
         barrels_to_purchase = []
 
         if  green_potions < 5:
                 
             for barrel in wholesale_catalog:
-                if barrel.price <= gold_price and barrel.sku == "MINI_GREEN_BARREL": #CHNAGED LOGIC TO TRY BUYING A MINI BARREL FIRST
+                if barrel.price <= gold_price and barrel.sku == "SMALL_GREEN_BARREL": #CHNAGED LOGIC TO TRY BUYING A MINI BARREL FIRST
                     gold_price-=barrel.price #reuce the amount of gold used to purchase
                     updated_barrel_qty +=1
 
@@ -101,7 +101,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 barrels_to_purchase.append(
                             {
                                         #"sku": "SMALL_GREEN_BARREL",
-                                "sku" : "MINI_GREEN_BARREL",
+                                "sku" : "SMALL_GREEN_BARREL",
                                 "quantity": updated_barrel_qty,  #update the barrel quantity
                             }
                 )

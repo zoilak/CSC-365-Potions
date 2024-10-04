@@ -26,8 +26,8 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
         
         #green stuff
-        total_green_ml = result.num_green_ml
-        total_green_potions = result.num_green_potions
+        total_green_ml = int(result.num_green_ml)
+        total_green_potions = int(result.num_green_potions)
 
         # #red stuff
         # total_red_ml = result.num_red_ml
@@ -75,7 +75,7 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_green_potions FROM global_inventory" )).one()
         
-        num_green_ml = result.num_green_ml
+        num_green_ml = int(result.num_green_ml)
         quantity_count = 0
 
 

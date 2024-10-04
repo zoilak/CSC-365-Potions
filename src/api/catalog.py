@@ -17,17 +17,17 @@ def get_catalog():
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT num_green_potions, num_blue_potions, num_red_potions FROM global_inventory")).one()
         
-        total_green_potions = result.num_green_potions
-        # total_red_potions = result.num_red_potions
-        # total_blue_potions = result.num_blue_potions
+        total_green_potions = int(result.num_green_potions)
+        total_red_potions = result.num_red_potions
+        total_blue_potions = result.num_blue_potions
 
-    if total_green_potions >=1:
+    if total_green_potions > 0:
          return [
                 {
                     "sku": "GREEN_POTION_0",
                     "name": "green potion",
                     "quantity": total_green_potions,
-                    "price": 20,    #lower price so they sell
+                    "price": 60,    
                     "potion_type": [0, 100, 0, 0],
                 }
             ]
