@@ -135,7 +135,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
 
 class CartCheckout(BaseModel):
-    payment: str
+    payment: str #why is this a string
 
 
 
@@ -152,9 +152,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
 
-        green_potions = result.num_green_potions
-        blue_potions = result.num_blue_potions
-        red_potions = result.num_red_potions
+        green_potions = int(result.num_green_potions)
+        blue_potions = int(result.num_blue_potions)
+        red_potions = int(result.num_red_potions)
 
         
 
@@ -166,7 +166,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         
         
         gold_paid = 0
-        potion_cost = 60 
+        green_potion_cost = 60 
+        blue_potion_cost = 60
+        red_potion_cost = 60
 
         #quantity = carts[cart_id][0][1]
        
@@ -178,7 +180,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                 if quantity <= green_potions:
 
                     green_potions -= quantity
-                    gold_paid += quantity * potion_cost
+                    gold_paid += quantity * green_potion_cost
                     green_potions_bought += quantity
 
             elif "blue" in item_sku.lower:
@@ -186,7 +188,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                 if quantity <= blue_potions:
 
                     blue_potions -= quantity
-                    gold_paid += quantity * potion_cost
+                    gold_paid += quantity * blue_potion_cost
                     blue_potions_bought += quantity 
 
             elif "red" in item_sku.lower:
@@ -194,7 +196,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                 if quantity <= red_potions:
 
                     red_potions -= quantity
-                    gold_paid += quantity * potion_cost
+                    gold_paid += quantity * red_potion_cost
                     red_potions_bought += quantity     
 
             else:
