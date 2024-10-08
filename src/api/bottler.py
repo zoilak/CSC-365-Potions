@@ -76,7 +76,7 @@ def get_bottle_plan():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory" )).one()
+        result = connection.execute(sqlalchemy.text("SELECT num_green_ml, num_red_ml, num_blue_ml FROM global_inventory" )).one()
         
         #amount per color potion
         new_green_ml = int(result.num_green_ml)
@@ -101,7 +101,7 @@ def get_bottle_plan():
     # Initial logic: bottle all barrels into red/green potions.
 
     bottled_up =[]
-    if red_potions_count >=0:
+    if red_potions_count >0:
         bottled_up.append( [
                 {
                     "potion_type": [100, 0, 0, 0],
@@ -109,7 +109,7 @@ def get_bottle_plan():
                 }
             ])
         
-    if green_potions_count >=0:
+    if green_potions_count >0:
         bottled_up.append( [
                 {
                     "potion_type": [0, 100, 0, 0],
@@ -117,7 +117,7 @@ def get_bottle_plan():
                 }
             ])
         
-    if blue_potions_count >=0:
+    if blue_potions_count >0:
         bottled_up.append( [
                 {
                     "potion_type": [0, 0, 100, 0],
@@ -125,12 +125,12 @@ def get_bottle_plan():
                 }
             ])
         
-    
-    connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = {green_potions_count}"))
-    connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {red_potions_count}"))
-    connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_potions = {blue_potions_count}"))
+
+    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = {green_potions_count}"))
+    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {red_potions_count}"))
+    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_potions = {blue_potions_count}"))
         
-    return bottled_up
+    # return bottled_up
 
 if __name__ == "__main__":
     print(get_bottle_plan())

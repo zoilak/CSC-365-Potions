@@ -146,8 +146,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 }
                     )
                         
-        #cannot afford
-        print(f"barrels purchasing: {barrels_to_purchase}")
+        #barrels that have been purchased
+        for purchased in barrels_to_purchase:
+            print(f"barrels purchasing: {purchased}")
 
         return barrels_to_purchase
 
