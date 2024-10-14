@@ -133,18 +133,18 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 }
                     )
 
-            if barrel.price <= gold_price and mini in barrel.sku.lower(): #CHNAGED LOGIC TO TRY BUYING A MINI BARREL FIRST
-                if least_potions in barrel.sku.lower():
-                    gold_price-=barrel.price 
-                    updated_barrel_qty +=1
+            # if barrel.price <= gold_price and mini in barrel.sku.lower(): #CHNAGED LOGIC TO TRY BUYING A MINI BARREL FIRST
+            #     if least_potions in barrel.sku.lower():
+            #         gold_price-=barrel.price 
+            #         updated_barrel_qty +=1
                     
-                    barrels_to_purchase.append(
-                                {
+            #         barrels_to_purchase.append(
+            #                     {
                                                 
-                                    "sku" : barrel.sku,
-                                    "quantity": updated_barrel_qty,  #update the barrel quantity
-                                }
-                    )
+            #                         "sku" : barrel.sku,
+            #                         "quantity": updated_barrel_qty,  #update the barrel quantity
+            #                     }
+            #         )
                         
         #barrels that have been purchased
         for purchased in barrels_to_purchase:

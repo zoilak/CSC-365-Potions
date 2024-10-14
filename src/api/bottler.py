@@ -64,6 +64,9 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {total_green_ml}"))
         connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = {total_green_potions}"))
 
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_ml = {total_blue_ml}"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_potions = {total_blue_potions}"))
+
         connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = {total_red_ml}"))
         connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {total_red_potions}"))
         
@@ -88,49 +91,33 @@ def get_bottle_plan():
         red_potions_count = int(new_red_ml/100)
         blue_potions_count = int(new_blue_ml/100)
 
-        #make all bottles into barrels
-        # while num_green_ml >= 100:
-        #     num_green_ml-=100
-        #     connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = {num_green_ml}"))
-        #     quantity_count += 1
-
-    # Each bottle has a quantity of what proportion of red, blue, and
-    # green potion to add.
-    # Expressed in integers from 1 to 100 that must sum up to 100.
-
-    # Initial logic: bottle all barrels into red/green potions.
-
-    bottled_up =[]
-    if red_potions_count >0:
-        bottled_up.append( [
-                {
-                    "potion_type": [100, 0, 0, 0],
-                    "quantity": red_potions_count,
-                }
-            ])
+        bottled_up =[]
+        if red_potions_count >0:
+            bottled_up.append( [
+                    {
+                        "potion_type": [100, 0, 0, 0],
+                        "quantity": red_potions_count,
+                    }
+                ])
+            
+        if green_potions_count >0:
+            bottled_up.append( [
+                    {
+                        "potion_type": [0, 100, 0, 0],
+                        "quantity": green_potions_count,
+                    }
+                ])
+            
+        if blue_potions_count >0:
+            bottled_up.append( [
+                    {
+                        "potion_type": [0, 0, 100, 0],
+                        "quantity": blue_potions_count,
+                    }
+                ])
         
-    if green_potions_count >0:
-        bottled_up.append( [
-                {
-                    "potion_type": [0, 100, 0, 0],
-                    "quantity": green_potions_count,
-                }
-            ])
         
-    if blue_potions_count >0:
-        bottled_up.append( [
-                {
-                    "potion_type": [0, 0, 100, 0],
-                    "quantity": blue_potions_count,
-                }
-            ])
-        
-
-    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = {green_potions_count}"))
-    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {red_potions_count}"))
-    # connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_potions = {blue_potions_count}"))
-        
-    # return bottled_up
+    return bottled_up
 
 if __name__ == "__main__":
     print(get_bottle_plan())
