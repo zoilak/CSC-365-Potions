@@ -10,51 +10,20 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
-
     catalog=[]
-
-    #need tp add all potions now
+    
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT num_green_potions, num_blue_potions, num_red_potions FROM global_inventory")).one()
+        # get all of the potions that are not 0
+        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_storage WHERE quantity != 0")).fetchall()
         
-        total_green_potions = int(result.num_green_potions)
-        total_red_potions = int(result.num_red_potions)
-        total_blue_potions = int(result.num_blue_potions)
-
-    if total_green_potions > 0:
-         catalog.append([
-                {
-                    "sku": "GREEN_POTION_0",
-                    "name": "green potion",
-                    "quantity": total_green_potions,
-                    "price": 60,    
-                    "potion_type": [0, 100, 0, 0],
-                }
-            ])
+    for potion in result:
+        catalog.append({
+            "sku": potion.sku,
+            "name": potion.sku,
+            "quantity": potion.quantity,
+            "price": potion.cost,
+            "potion_type": [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml],
+        })
     
-    if total_blue_potions >=1:
-        catalog.append( [
-                    {
-                        "sku": "BLUE_POTION_0",
-                        "name": "blue potion",
-                        "quantity": total_blue_potions,
-                        "price": 60,    #lower price so they sell
-                        "potion_type": [0, 0, 100, 0],
-                    }
-                ])
-    
-    if total_red_potions >=1:
-        catalog.append( [
-                    {
-                        "sku": "RED_POTION_0",
-                        "name": "red potion",
-                        "quantity": total_red_potions,
-                        "price": 60,    
-                        "potion_type": [100, 0, 0, 0],
-                    }
-                ])
-    
-
-        
     #else return empty
     return catalog
