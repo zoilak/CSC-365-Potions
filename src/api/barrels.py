@@ -88,12 +88,20 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
         updated_barrel_qty = 0
         barrels_to_purchase = []
+        local_barrels = {
+            'red': [1,0,0,0],
+            'green': [0,1,0,0],
+            'blue': [0,0,1,0],
+            'dark': [0,0,0,1]
+        }
+        
 
         #barrels being sold        
         for barrel in wholesale_catalog:
             
             #the max amount of barrels i can purchase from that barrel in catalog with the money i have
-            max_barrels = gold_amount//barrel.price
+            if barrel.price> 0:
+                max_barrels = gold_amount//barrel.price
 
             #procees only if you have enoough to buy at least 1 barrel
             if max_barrels > 0:
@@ -101,20 +109,23 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 #check current inventory
                 for row in result_barrel:
 
-                    if row['sku'] == barrel.sku and row['mls'] < 100 and row ['quantity'] > 0:
-                        updated_barrel_qty += 1
-                        barrels_to_purchase.append(
-                                {
-                                            
-                                    "sku" : barrel.sku,
-                                    "quantity": updated_barrel_qty,  #update the barrel quantity
-                                }
-                    )
+                    if barrel.sku in local_barrels:
+                        if row.mls < 100 and row.quantity > 0:
+                            updated_barrel_qty += 1
+                            barrels_to_purchase.append(
+                                    {
+                                                
+                                        "sku" : barrel.sku,
+                                        "quantity": updated_barrel_qty,  #update the barrel quantity
+                                    }
+                        )
                     
+                        gold_amount-= barrel.price * updated_barrel_qty
+
                     updated_barrel_qty = 0
                     #row["quantity"] = max_barrels
                     #update price of barrels purchased
-                    gold_amount-= barrel.price * max_barrels
+                    
 
             else:
                 print("Error buying barrels")
