@@ -15,13 +15,19 @@ router = APIRouter(
 
 @router.get("/audit")
 def get_inventory():
-    """ """
+    """ call all potions, call gold, call ml"""
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory" )).one()
+        # result_ml = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory" )).fetchall()
+        result_gold = connection.execute(sqlalchemy.text("SELECT gold FROM gold_tracker")).one()
+        result_potions = connection.execute(sqlalchemy.text("SELECT quantity FROM potion_storage")).fetchall()
 
-        total_potions = int(result.num_green_potions) + int(result.num_blue_potions) + int(result.num_red_potions)
-        total_ml = int(result.num_green_ml) + int(result.num_red_ml) + int(result.num_blue_ml)
-        total_gold = int(result.gold)
+        for quant in result_potions:
+            total_potions+= quant.quantity
+        
+        # total_ml = int(result.num_green_ml) + int(result.num_red_ml) + int(result.num_blue_ml)
+        
+        total_gold = result_gold.gold
+        total_ml = 0
 
     
     return {"number_of_potions": total_potions, "ml_in_barrels": total_ml, "gold": total_gold}

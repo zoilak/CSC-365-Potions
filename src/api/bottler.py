@@ -118,7 +118,7 @@ def get_bottle_plan():
             if bottles_per_color:
                 min_bottles = min(bottles_per_color)  
             else :
-                0
+                min_bottles = 0
             
             if min_bottles > 0:
 

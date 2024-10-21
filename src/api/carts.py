@@ -90,16 +90,24 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 
 #local data for cart storage
-carts: Dict = {}  # cart_id: [[item_sku, quantity]]
+# carts: Dict = {}  # cart_id: [[item_sku, quantity]]
 
 
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    cart_id = len(carts) +1
-    carts[cart_id] = []
-    return {"cart_id": cart_id}
-
+    # cart_id = len(carts) +1
+    # carts[cart_id] = []
+    # return {"cart_id": cart_id}
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text( # type: ignore
+                                            """
+                                            INSERT INTO cart (customer_name)
+                                            VALUES (:customer_name)
+                                            RETURNING cart_id
+                                            """
+                                            ) , [{"customer_name" : new_cart.customer_name}]).scalar()
+    return{"cart_id": result}
 
 class CartItem(BaseModel):
     quantity: int
@@ -111,27 +119,17 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     Set the quantity for a specific item in the cart.
     If the item exists, it updates the quantity; otherwise, it adds the item.
     """
-    #check if it exits and if found update it 
-    for order in carts[cart_id]:
 
-        if order[0]==item_sku:
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text( # type: ignore
+                                            """ INSERT INTO cart_line_items( cart_id, item_sku, item_quantity)
+                                                VALUES (:cart_id, :sku, :item_quantity)
+                                             """),  
+                                            [{"cart_id" : cart_id,"sku": item_sku ,"item_quantity": cart_item.quantity}])
+    
+    print("message : Added {item_sku} to cart {cart_id} with quantity {cart_item.quantity}")
 
-            order[1] = cart_item.quantity
-
-            return {"message": f"Updated {item_sku} quantity to {cart_item.quantity}"}
-    
-    #if not found append as new entry
-    carts[cart_id].append([item_sku, cart_item.quantity])
-    
-    return {"message": f"Added {item_sku} to cart with quantity {cart_item.quantity}"}
-        
-    
-    """ """
-    # with connection open
-    #     ask database for something
-    #     psuh data into database
-    #     find out what to return in json
-    # return "OK"
+    return "OK"
 
 
 class CartCheckout(BaseModel):
@@ -150,70 +148,71 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     print("cart payment:" , cart_checkout.payment)
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
+        
+    #     result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
 
-        green_potions = int(result.num_green_potions)
-        blue_potions = int(result.num_blue_potions)
-        red_potions = int(result.num_red_potions)
+    #     green_potions = int(result.num_green_potions)
+    #     blue_potions = int(result.num_blue_potions)
+    #     red_potions = int(result.num_red_potions)
 
         
 
-        gold_count = result.gold
+    #     gold_count = result.gold
 
-        green_potions_bought = 0
-        red_potions_bought = 0
-        blue_potions_bought = 0
+    #     green_potions_bought = 0
+    #     red_potions_bought = 0
+    #     blue_potions_bought = 0
         
         
-        gold_paid = 0
-        green_potion_cost = 60 
-        blue_potion_cost = 60
-        red_potion_cost = 60
+    #     gold_paid = 0
+    #     green_potion_cost = 60 
+    #     blue_potion_cost = 60
+    #     red_potion_cost = 60
 
-        #quantity = carts[cart_id][0][1]
+    #     #quantity = carts[cart_id][0][1]
        
 
-        for item_sku, quantity in carts[cart_id]:
+    #     for item_sku, quantity in carts[cart_id]:
 
-            if "green" in item_sku.lower():
+    #         if "green" in item_sku.lower():
 
-                if quantity <= green_potions:
+    #             if quantity <= green_potions:
 
-                    green_potions -= quantity
-                    gold_paid += quantity * green_potion_cost
-                    green_potions_bought += quantity
+    #                 green_potions -= quantity
+    #                 gold_paid += quantity * green_potion_cost
+    #                 green_potions_bought += quantity
 
-            elif "blue" in item_sku.lower:
+    #         elif "blue" in item_sku.lower:
                
-                if quantity <= blue_potions:
+    #             if quantity <= blue_potions:
 
-                    blue_potions -= quantity
-                    gold_paid += quantity * blue_potion_cost
-                    blue_potions_bought += quantity 
+    #                 blue_potions -= quantity
+    #                 gold_paid += quantity * blue_potion_cost
+    #                 blue_potions_bought += quantity 
 
-            elif "red" in item_sku.lower:
+    #         elif "red" in item_sku.lower:
                
-                if quantity <= red_potions:
+    #             if quantity <= red_potions:
 
-                    red_potions -= quantity
-                    gold_paid += quantity * red_potion_cost
-                    red_potions_bought += quantity     
+    #                 red_potions -= quantity
+    #                 gold_paid += quantity * red_potion_cost
+    #                 red_potions_bought += quantity     
 
-            else:
-                print("nothing purchased")
-                return {}
+    #         else:
+    #             print("nothing purchased")
+    #             return {}
 
-        final_gold = gold_count + gold_paid
+    #     final_gold = gold_count + gold_paid
 
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_potions = :red_potions"), {"red_potions": red_potions})
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_potions = :blue_potions"), {"blue_potions": blue_potions})
+    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
+    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_potions = :red_potions"), {"red_potions": red_potions})
+    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_potions = :blue_potions"), {"blue_potions": blue_potions})
 
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
+    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
 
-    #need to create a local counter and cart 
-    total_potions = green_potions_bought + red_potions_bought + blue_potions_bought
-    print("purchase successful")
-    return {"total_potions_bought": total_potions, "total_green_bought": green_potions_bought,
-            "total_red_bought": red_potions_bought,"total_blue_bought": blue_potions_bought,"total_gold_paid": gold_paid}
+    # #need to create a local counter and cart 
+    # total_potions = green_potions_bought + red_potions_bought + blue_potions_bought
+    # print("purchase successful")
+    # return {"total_potions_bought": total_potions, "total_green_bought": green_potions_bought,
+    #         "total_red_bought": red_potions_bought,"total_blue_bought": blue_potions_bought,"total_gold_paid": gold_paid}
    
