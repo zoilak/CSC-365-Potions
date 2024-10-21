@@ -105,6 +105,7 @@ def create_cart(new_cart: Customer):
                                             INSERT INTO cart (customer_name)
                                             VALUES (:customer_name)
                                             RETURNING cart_id
+                                         
                                             """
                                             ) , [{"customer_name" : new_cart.customer_name}]).scalar()
     return{"cart_id": result}
@@ -122,7 +123,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text( # type: ignore
-                                            """ INSERT INTO cart_line_items( cart_id, item_sku, item_quantity)
+                                            """ INSERT INTO cart_line_items( cart_id, sku, item_quantity)
                                                 VALUES (:cart_id, :sku, :item_quantity)
                                              """),  
                                             [{"cart_id" : cart_id,"sku": item_sku ,"item_quantity": cart_item.quantity}])
@@ -148,71 +149,44 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     print("cart payment:" , cart_checkout.payment)
 
     with db.engine.begin() as connection:
-        
-    #     result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
+        result_cart = connection.execute(sqlalchemy.text("""
+                                                        SELECT cart_id, sku, item_quantity
+                                                        FROM cart_line_items
+                                                        WHERE cart_id = :cart_id
+                                                    """), {"cart_id": cart_id}).fetchall()
 
-    #     green_potions = int(result.num_green_potions)
-    #     blue_potions = int(result.num_blue_potions)
-    #     red_potions = int(result.num_red_potions)
+    total_potions = 0  # Initialize total_potions
+    gold_paid = 0  # Initialize gold_paid
 
-        
+    for cart_info in result_cart:
+        # Get potion details
+        with db.engine.begin() as connection:
+            
+            potion_to_buy = connection.execute(sqlalchemy.text("""
+                                                                    SELECT quantity, cost, sku
+                                                                    FROM potion_storage
+                                                                    WHERE potion_storage.sku = :sku
+                                                                """), {"sku": cart_info.sku}).first()
+           
+           
+            if potion_to_buy is None:
+                raise ValueError(f"Potion with SKU {cart_info.sku} not found in storage.")
+           
+            # Update potion quantity
+            connection.execute(sqlalchemy.text("""
+                                                        UPDATE potion_storage
+                                                        SET quantity = quantity - :item_quantity
+                                                        WHERE potion_storage.sku = :sku
+                                                    """), {"item_quantity": cart_info.item_quantity, "sku": cart_info.sku})
 
-    #     gold_count = result.gold
+            # Update gold_tracker
+            connection.execute(sqlalchemy.text(""" 
+                                                        UPDATE gold_tracker
+                                                        SET gold = gold + :payment
+                                                    """), {"payment": cart_info.item_quantity * potion_to_buy.cost})
 
-    #     green_potions_bought = 0
-    #     red_potions_bought = 0
-    #     blue_potions_bought = 0
-        
-        
-    #     gold_paid = 0
-    #     green_potion_cost = 60 
-    #     blue_potion_cost = 60
-    #     red_potion_cost = 60
+            total_potions += cart_info.item_quantity
+            gold_paid += cart_info.item_quantity * potion_to_buy.cost
 
-    #     #quantity = carts[cart_id][0][1]
-       
-
-    #     for item_sku, quantity in carts[cart_id]:
-
-    #         if "green" in item_sku.lower():
-
-    #             if quantity <= green_potions:
-
-    #                 green_potions -= quantity
-    #                 gold_paid += quantity * green_potion_cost
-    #                 green_potions_bought += quantity
-
-    #         elif "blue" in item_sku.lower:
-               
-    #             if quantity <= blue_potions:
-
-    #                 blue_potions -= quantity
-    #                 gold_paid += quantity * blue_potion_cost
-    #                 blue_potions_bought += quantity 
-
-    #         elif "red" in item_sku.lower:
-               
-    #             if quantity <= red_potions:
-
-    #                 red_potions -= quantity
-    #                 gold_paid += quantity * red_potion_cost
-    #                 red_potions_bought += quantity     
-
-    #         else:
-    #             print("nothing purchased")
-    #             return {}
-
-    #     final_gold = gold_count + gold_paid
-
-    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = :green_potions"), {"green_potions": green_potions})
-    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_potions = :red_potions"), {"red_potions": red_potions})
-    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_potions = :blue_potions"), {"blue_potions": blue_potions})
-
-    #     connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = :gold_count"), {"gold_count": final_gold})
-
-    # #need to create a local counter and cart 
-    # total_potions = green_potions_bought + red_potions_bought + blue_potions_bought
-    # print("purchase successful")
-    # return {"total_potions_bought": total_potions, "total_green_bought": green_potions_bought,
-    #         "total_red_bought": red_potions_bought,"total_blue_bought": blue_potions_bought,"total_gold_paid": gold_paid}
-   
+        return {"total_potions_bought": total_potions, "total_gold_paid": gold_paid}
+    
