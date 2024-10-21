@@ -85,6 +85,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         
         gold_amount = result_gold.gold
 
+        max_barrels = 0
+        
         updated_barrel_qty = 0
         barrels_to_purchase = []
         local_barrels = {
