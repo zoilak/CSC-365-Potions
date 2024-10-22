@@ -25,40 +25,48 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
-    barrel_green_ml = 0
-    barrel_blue_ml =0   
-    barrel_red_ml =0
-    barrel_dark_ml =0
-    gold_price = 0
-
-    for barrel in barrels_delivered:
-        gold_price-= barrel.price * barrel.quantity
-        if "green" in barrel.sku:
-            barrel_green_ml += barrel.ml_per_barrel * barrel.quantity
-               
-        elif "red" in barrel.sku:
-            barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
-            
-        elif "blue" in barrel.sku:
-            barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
-         
-
-        elif "dark" in barrel.sku:
-            barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
-          
-
-    print("red barrels delivered: ",barrel_green_ml )
-    print("green barrels delivered: ",barrel_red_ml )
-    print("blue barrels delivered: ",barrel_blue_ml )
-    print("dark barrels delivered: ",barrel_dark_ml )
-
     with db.engine.begin() as connection:
+
+        gold_price = 0
+        barrel_blue_ml = 0
+        barrel_red_ml = 0
+        barrel_green_ml =0
+        barrel_dark_ml =0
+        for barrel in barrels_delivered:
+            gold_price -= (barrel.price * barrel.quantity)
+            if "green" in barrel.sku:
+                
+                barrel_green_ml += barrel.ml_per_barrel * barrel.quantity
+                
+                
+            elif "red" in barrel.sku:
+                # red_barrels += barrel.quantity
+                barrel_red_ml += barrel.ml_per_barrel * barrel.quantity
+                
+            elif "blue" in barrel.sku:
+                barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
+            
+
+            elif "dark" in barrel.sku:
+                barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
+            
         
         #update ml
-        connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :green_ml WHERE sku = 'green'"), {"green_ml": barrel_green_ml})
-        connection.execute(sqlalchemy.text( "UPDATE ml_storage SET quantity = :red_ml WHERE sku = 'red'"), {"red_ml": barrel_red_ml})
-        connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :blue_ml WHERE sku = 'blue'"), {"blue_ml": barrel_blue_ml})
-        connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :dark_ml WHERE sku = 'dark'" ), {"dark_ml": barrel_dark_ml})
+        connection.execute(sqlalchemy.text("""
+                                                UPDATE ml_storage SET mls = :green_ml WHERE sku = 'green';
+                                                UPDATE ml_storage SET mls = :red_ml WHERE sku = 'red';
+                                                UPDATE ml_storage SET mls = :blue_ml WHERE sku = 'blue';
+                                                UPDATE ml_storage SET mls = :dark_ml WHERE sku = 'dark';
+                                            """), {
+                                                "green_ml": barrel_green_ml,
+                                                "red_ml": barrel_red_ml,
+                                                "blue_ml": barrel_blue_ml,
+                                                "dark_ml": barrel_dark_ml
+                                            })
+        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :green_ml WHERE sku = 'green'"), {"green_ml": barrel_green_ml})
+        # connection.execute(sqlalchemy.text( "UPDATE ml_storage SET quantity = :red_ml WHERE sku = 'red'"), {"red_ml": barrel_red_ml})
+        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :blue_ml WHERE sku = 'blue'"), {"blue_ml": barrel_blue_ml})
+        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :dark_ml WHERE sku = 'dark'" ), {"dark_ml": barrel_dark_ml})
 
         #update gold
         connection.execute(sqlalchemy.text("UPDATE gold_tracker SET gold = :gold_cur" ), {"gold_cur": gold_price})
@@ -118,8 +126,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                     "quantity": updated_barrel_qty,  #update the barrel quantity
                                 }
                         )
+                    
                         
-                        gold_amount-= barrel.price * updated_barrel_qty
+                    gold_amount-= barrel.price * updated_barrel_qty
 
                 
                     
@@ -129,6 +138,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
             else:
                 print(f"Can't afford barrel ${barrel.sku}")
+        
         for purchased in barrels_to_purchase:
             print(f"barrels purchasing: {purchased}")
 

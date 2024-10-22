@@ -14,16 +14,20 @@ def get_catalog():
     
     with db.engine.begin() as connection:
         # get all of the potions that are not 0
-        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_storage WHERE quantity != 0")).fetchall()
+        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_storage WHERE quantity > 0")).fetchall()
         
     for potion in result:
         catalog.append({
             "sku": potion.sku,
-            "name": potion.sku,
+            "name": potion.name,
             "quantity": potion.quantity,
             "price": potion.cost,
             "potion_type": [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml],
         })
+
+    #what exactly is in catalog
+    for available in catalog:
+            print(f"available potions: {available}")
     
     #else return empty
     return catalog

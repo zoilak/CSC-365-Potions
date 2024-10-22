@@ -111,7 +111,7 @@ def get_bottle_plan():
             # Calculate how many bottles can be made for each color that requires some amount of ml
             for color, potion_ml in color_components:
                 if potion_ml > 0:
-                    bottles_per_color.append(ml_inventory[color] // potion_ml)
+                    bottles_per_color.append(ml_inventory[color] // potion_ml) #determine the amout of ml needed to create it 
 
             # Find the minimum number of bottles that can be made across all colors
         
@@ -122,11 +122,12 @@ def get_bottle_plan():
             
             if min_bottles > 0:
 
-                # Deduct the used ml from the ml_storage  
+                #Deduct the used ml from the ml_storage  
                 for color, potion_ml in color_components:
                     if potion_ml > 0:  # Only deduct if we need that ml to make the potion
                         ml_inventory[color] -= min_bottles * potion_ml
 
+                
                 if row.red_ml > 0:
                     ml_inventory['red'] -= min_bottles * row.red_ml
                 if row.green_ml > 0:
@@ -137,13 +138,26 @@ def get_bottle_plan():
                     ml_inventory['dark'] -= min_bottles * row.dark_ml
             
             # Add the potion mixture details dynamically
-                bottled_up.append({
-                    "potion_type": potion_type,
-                    "quantity": min_bottles
-                })
-   
-        
-    print("get_bottle_plan:", bottled_up)  
+            bottled_up.append({
+                "potion_type": potion_type,
+                "quantity": min_bottles
+            })
+
+        connection.execute(sqlalchemy.text("""
+                                                UPDATE ml_storage SET mls = :green_ml WHERE sku = 'green';
+                                                UPDATE ml_storage SET mls = :red_ml WHERE sku = 'red';
+                                                UPDATE ml_storage SET mls = :blue_ml WHERE sku = 'blue';
+                                                UPDATE ml_storage SET mls = :dark_ml WHERE sku = 'dark';
+                                            """), {
+                                                "green_ml": ml_inventory['green'],
+                                                "red_ml": ml_inventory['red'],
+                                                "blue_ml": ml_inventory['blue'],
+                                                "dark_ml": ml_inventory['dark']
+                                            })
+
+            #update ml storage after potions made
+  
+      
     return bottled_up
 
 if __name__ == "__main__":

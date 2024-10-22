@@ -104,7 +104,7 @@ def create_cart(new_cart: Customer):
                                             """
                                             INSERT INTO cart (customer_name)
                                             VALUES (:customer_name)
-                                            RETURNING cart_id
+                                            RETURNING id
                                          
                                             """
                                             ) , [{"customer_name" : new_cart.customer_name}]).scalar()
@@ -128,7 +128,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
                                              """),  
                                             [{"cart_id" : cart_id,"sku": item_sku ,"item_quantity": cart_item.quantity}])
     
-    print("message : Added {item_sku} to cart {cart_id} with quantity {cart_item.quantity}")
+    print(f"message : Added {item_sku} to cart {cart_id} with quantity {cart_item.quantity}")
 
     return "OK"
 
