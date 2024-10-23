@@ -28,8 +28,14 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                                                         FROM potion_storage
                                                         """
                                                     )).fetchall()     
-      
-        
+        #getting the row_ml that is there and then subtracting this later
+
+        total_red_ml = 0
+        total_green_ml = 0
+        total_blue_ml = 0
+        total_dark_ml = 0
+
+
         potion_inventory = {}
         for row in result_potions:
             # potion_inventory[row.sku] = row.mls
@@ -58,6 +64,29 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                                 WHERE sku = :sku
                         """), {"new_quantity": actual_quantity, "sku": potion_sku})
                 
+                #update ml_storage based in potions made
+                total_red_ml += potion_list[0] * potion.quantity
+                total_green_ml += potion_list[1] * potion.quantity
+                total_blue_ml += potion_list[2] * potion.quantity
+                total_dark_ml += potion_list[3] * potion.quantity
+                
+                connection.execute(sqlalchemy.text("""
+                                        UPDATE ml_storage
+                                        SET mls = CASE sku
+                                            WHEN 'red' THEN mls - :red_ml
+                                            WHEN 'green' THEN mls - :green_ml
+                                            WHEN 'blue' THEN mls - :blue_ml
+                                            WHEN 'dark' THEN mls - :dark_ml
+                                            END
+                                        WHERE sku IN ('red', 'green', 'blue', 'dark')
+                                    """), {
+                                        "red_ml": total_red_ml,
+                                        "green_ml": total_green_ml,
+                                        "blue_ml": total_blue_ml,
+                                        "dark_ml": total_dark_ml
+                                    })
+                
+            
             # else:
             #     print ("error: Inavlid potion type")
         
@@ -83,6 +112,7 @@ def get_bottle_plan():
                                                         """
                                                     )).fetchall()
         
+        #only make potions for those that have less than 5 potion of potions in their storage
         result_potion = connection.execute(sqlalchemy.text("""
                                                         SELECT *
                                                         FROM potion_storage
@@ -90,73 +120,41 @@ def get_bottle_plan():
                     
                                                         """
                                                     )).fetchall()
-        #amount per color potion
+       
+       #returns a dictionary with color as key and ml as quantity
         ml_inventory = {}
         for row in result:
             ml_inventory[row.sku] = row.mls
     
-        
+        potions_made = 0
         bottled_up =[]
 
-        for row in result_potion:
-            # Create a potion_type based on the row values
 
-            potion_type = [row.red_ml, row.green_ml, row.blue_ml, row.dark_ml]
+        #decided to use a simpler logic/ might go back to my previous bottling logic
+        #for row (potion) from db
+        for potion in result_potion:
+           #how much ml is needed to make that potion
+            potion_type =  [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml]
 
-            color_components = [('red', row.red_ml), ('green', row.green_ml), ('blue', row.blue_ml), ('dark', row.dark_ml)]
-
-            # Initialize a list to hold the possible number of bottles for each color
-            bottles_per_color = []
-
-            # Calculate how many bottles can be made for each color that requires some amount of ml
-            for color, potion_ml in color_components:
-                if potion_ml > 0:
-                    bottles_per_color.append(ml_inventory[color] // potion_ml) #determine the amout of ml needed to create it 
-
-            # Find the minimum number of bottles that can be made across all colors
-        
-            if bottles_per_color:
-                min_bottles = min(bottles_per_color)  
-            else :
-                min_bottles = 0
-            
-            if min_bottles > 0:
-
-                #Deduct the used ml from the ml_storage  
-                for color, potion_ml in color_components:
-                    if potion_ml > 0:  # Only deduct if we need that ml to make the potion
-                        ml_inventory[color] -= min_bottles * potion_ml
-
+            #check if i have enough to make that potion
+            while potion.red_ml < ml_inventory['red'] and potion.blue_ml < ml_inventory['blue'] and potion.green_ml < ml_inventory['green'] and potion.dark_ml < ml_inventory['dark']:
                 
-                if row.red_ml > 0:
-                    ml_inventory['red'] -= min_bottles * row.red_ml
-                if row.green_ml > 0:
-                    ml_inventory['green'] -= min_bottles * row.green_ml
-                if row.blue_ml > 0:
-                    ml_inventory['blue'] -= min_bottles * row.blue_ml
-                if row.dark_ml > 0:
-                    ml_inventory['dark'] -= min_bottles * row.dark_ml
+                potions_made +=1
+
+                ml_inventory["red"] -= potion.red_ml
+                ml_inventory["blue"] -= potion.blue_ml
+                ml_inventory["dark"] -= potion.dark_ml
+                ml_inventory["green"] -= potion.green_ml
             
-            # Add the potion mixture details dynamically
-            bottled_up.append({
-                "potion_type": potion_type,
-                "quantity": min_bottles
-            })
+            
+            if potions_made > 0:    
+                bottled_up.append({
+                            "potion_type": potion_type,
+                            "quantity": potions_made
+                            })
 
-        connection.execute(sqlalchemy.text("""
-                                                UPDATE ml_storage SET mls = :green_ml WHERE sku = 'green';
-                                                UPDATE ml_storage SET mls = :red_ml WHERE sku = 'red';
-                                                UPDATE ml_storage SET mls = :blue_ml WHERE sku = 'blue';
-                                                UPDATE ml_storage SET mls = :dark_ml WHERE sku = 'dark';
-                                            """), {
-                                                "green_ml": ml_inventory['green'],
-                                                "red_ml": ml_inventory['red'],
-                                                "blue_ml": ml_inventory['blue'],
-                                                "dark_ml": ml_inventory['dark']
-                                            })
+            potions_made =0
 
-            #update ml storage after potions made
-  
       
     return bottled_up
 

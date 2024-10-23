@@ -63,10 +63,6 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                                                 "blue_ml": barrel_blue_ml,
                                                 "dark_ml": barrel_dark_ml
                                             })
-        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :green_ml WHERE sku = 'green'"), {"green_ml": barrel_green_ml})
-        # connection.execute(sqlalchemy.text( "UPDATE ml_storage SET quantity = :red_ml WHERE sku = 'red'"), {"red_ml": barrel_red_ml})
-        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :blue_ml WHERE sku = 'blue'"), {"blue_ml": barrel_blue_ml})
-        # connection.execute(sqlalchemy.text("UPDATE ml_storage SET quantity = :dark_ml WHERE sku = 'dark'" ), {"dark_ml": barrel_dark_ml})
 
         #update gold
         connection.execute(sqlalchemy.text("UPDATE gold_tracker SET gold = :gold_cur" ), {"gold_cur": gold_price})
@@ -126,11 +122,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                     "quantity": updated_barrel_qty,  #update the barrel quantity
                                 }
                         )
-                    
-                        
-                    gold_amount-= barrel.price * updated_barrel_qty
 
-                
+
+                    gold_amount-= barrel.price * updated_barrel_qty
                     
                     #row["quantity"] = max_barrels
                     #update price of barrels purchased
