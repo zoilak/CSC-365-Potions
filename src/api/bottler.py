@@ -155,7 +155,7 @@ def get_bottle_plan():
 
             potions_made =0
 
-      
+    print(bottled_up)
     return bottled_up
 
 if __name__ == "__main__":
