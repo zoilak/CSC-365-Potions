@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+import random
 from src.api import auth
 import sqlalchemy
 from src import database as db
@@ -25,49 +26,45 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
-    with db.engine.begin() as connection:
-
-        gold_price = 0
-        barrel_blue_ml = 0
-        barrel_red_ml = 0
-        barrel_green_ml =0
-        barrel_dark_ml =0
-        for barrel in barrels_delivered:
-            gold_price -= (barrel.price * barrel.quantity)
-            if "green" in barrel.sku:
-                
-                barrel_green_ml += barrel.ml_per_barrel * barrel.quantity
-                
-                
-            elif "red" in barrel.sku:
-                # red_barrels += barrel.quantity
-                barrel_red_ml += barrel.ml_per_barrel * barrel.quantity
-                
-            elif "blue" in barrel.sku:
-                barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
-            
-
-            elif "dark" in barrel.sku:
-                barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
-            
+    gold_price = 0
+    barrel_blue_ml = 0
+    barrel_red_ml = 0
+    barrel_green_ml =0
+    barrel_dark_ml =0
         
-        #update ml
+    for barrel in barrels_delivered:
+        gold_price += (barrel.price * barrel.quantity)
+        if "green" in barrel.sku:   
+            barrel_green_ml += barrel.ml_per_barrel * barrel.quantity
+                     
+        elif "red" in barrel.sku:
+            barrel_red_ml += barrel.ml_per_barrel * barrel.quantity
+                
+        elif "blue" in barrel.sku:
+            barrel_blue_ml += barrel.ml_per_barrel * barrel.quantity
+            
+
+        elif "dark" in barrel.sku:
+            barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
+
+    with db.engine.begin() as connection:
+        
+
         connection.execute(sqlalchemy.text("""
-                                                UPDATE ml_storage SET mls = :green_ml WHERE sku = 'green';
-                                                UPDATE ml_storage SET mls = :red_ml WHERE sku = 'red';
-                                                UPDATE ml_storage SET mls = :blue_ml WHERE sku = 'blue';
-                                                UPDATE ml_storage SET mls = :dark_ml WHERE sku = 'dark';
-                                            """), {
-                                                "green_ml": barrel_green_ml,
-                                                "red_ml": barrel_red_ml,
-                                                "blue_ml": barrel_blue_ml,
-                                                "dark_ml": barrel_dark_ml
-                                            })
+            INSERT INTO barrel_ml_log (red, green, blue, dark)
+            VALUES (:barrel_red_ml, :barrel_green_ml, :barrel_blue_ml, :barrel_dark_ml)
+        """), {
+            "barrel_red_ml": barrel_red_ml,
+            "barrel_green_ml": barrel_green_ml,
+            "barrel_blue_ml": barrel_blue_ml,
+            "barrel_dark_ml": barrel_dark_ml
+        })
 
-        #update gold
-        connection.execute(sqlalchemy.text("UPDATE gold_tracker SET gold = :gold_cur" ), {"gold_cur": gold_price})
-    
-
+        #loosing gold because you are purchasing barrels
+        connection.execute(sqlalchemy.text("""
+           INSERT INTO gold_tracker(gold)
+            VALUES (:gold_price)
+            """), {"gold_price": - gold_price })
     return "OK"
 
 # Gets called once a day
@@ -75,68 +72,60 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
-    print(wholesale_catalog)
+    # Print and shuffle wholesale catalog
+    print("Wholesale Catalog:", wholesale_catalog)
+    random.shuffle(wholesale_catalog)
 
     with db.engine.begin() as connection:
+        # Get current ml totals and gold amount
         result_barrel = connection.execute(sqlalchemy.text("""
-                                                        SELECT sku, mls, quantity
-                                                        FROM ml_storage
-                                                        WHERE sku IN ('red', 'blue', 'green', 'dark')
-                                                        """
-                                                    )).fetchall()
+            SELECT COALESCE(SUM(red), 0) AS red_ml,
+                COALESCE(SUM(green), 0) AS green_ml,
+                COALESCE(SUM(blue), 0) AS blue_ml,                                 
+                COALESCE(SUM(dark), 0) AS dark_ml                                 
+            FROM barrel_ml_log
+        """)).fetchone()
         
         result_gold = connection.execute(sqlalchemy.text("SELECT gold FROM gold_tracker")).one()
-        
         gold_amount = result_gold.gold
 
-        max_barrels = 0
-
-        updated_barrel_qty = 0
         barrels_to_purchase = []
+        # Inventory types and maximum ml allowed for each type
         local_barrels = {
-            'red': [1,0,0,0],
-            'green': [0,1,0,0],
-            'blue': [0,0,1,0],
-            'dark': [0,0,0,1]
+            'red': {'ml': result_barrel.red_ml, 'color_vector': [1, 0, 0, 0]},
+            'green': {'ml': result_barrel.green_ml, 'color_vector': [0, 1, 0, 0]},
+            'blue': {'ml': result_barrel.blue_ml, 'color_vector': [0, 0, 1, 0]},
+            'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
         }
-        
 
-        #barrels being sold        
+        # Loop through each barrel type in the shuffled catalog
         for barrel in wholesale_catalog:
-            updated_barrel_qty = 0
-            #the max amount of barrels i can purchase from that barrel in catalog with the money i have
+            # Check affordability of barrel
             if barrel.price > 0:
-                max_barrels = gold_amount//barrel.price
+                max_barrels = gold_amount // barrel.price
 
-            #procees only if you have enoough to buy at least 1 barrel
-            if max_barrels > 0:
-                
-                #check current inventory
-                for row in result_barrel:
-                    if local_barrels[row.sku] == barrel.potion_type and row.mls < 100:
-                        updated_barrel_qty += 1
-                        barrels_to_purchase.append(
-                                {
-                                            
-                                    "sku" : barrel.sku,
-                                    "quantity": updated_barrel_qty,  #update the barrel quantity
-                                }
-                        )
+                if max_barrels > 0:
+                    # Identify color type and ml available for that type
+                    for properties in local_barrels.values():
+                        if barrel.potion_type == properties['color_vector'] and properties['ml'] < 100:
+                            # Calculate remaining capacity and max barrels for the threshold
+                            available_capacity = 100 - properties['ml']
+                            barrels_to_add = min(max_barrels, available_capacity)
 
-
-                    gold_amount-= barrel.price * updated_barrel_qty
-                    
-                    #row["quantity"] = max_barrels
-                    #update price of barrels purchased
-                    
+                            # Add barrels to purchase list and adjust gold and ml totals
+                            if barrels_to_add > 0:
+                                barrels_to_purchase.append({
+                                    "sku": barrel.sku,
+                                    "quantity": barrels_to_add
+                                })
+                                gold_amount -= barrel.price * barrels_to_add
+                                properties['ml'] += barrels_to_add  # Update current ml level
 
             else:
-                print(f"Can't afford barrel ${barrel.sku}")
-        
-        for purchased in barrels_to_purchase:
-            print(f"barrels purchasing: {purchased}")
+                print(f"Can't afford barrel {barrel.sku}")
 
-        return barrels_to_purchase
+    # Print the barrels being purchased for confirmation
+    for purchased in barrels_to_purchase:
+        print(f"Purchasing barrels: {purchased}")
 
-#certain problems in code I don't think i am currently maximizing
-#the exact amount of barrels to buy :(
+    return barrels_to_purchase

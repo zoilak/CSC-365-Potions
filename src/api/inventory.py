@@ -17,26 +17,18 @@ router = APIRouter(
 def get_inventory():
     """ call all potions, call gold, call ml"""
     with db.engine.begin() as connection:
-        # result_ml = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory" )).fetchall()
-        result_gold = connection.execute(sqlalchemy.text("SELECT gold FROM gold_tracker")).one()
-        result_potions = connection.execute(sqlalchemy.text("SELECT quantity FROM potion_storage")).fetchall()
-        result_ml = connection.execute(sqlalchemy.text("SELECT mls FROM ml_storage")).fetchall()
+        result_gold = connection.execute(sqlalchemy.text("SELECT COAELSCE(SUM(gold),0) as gold_amount FROM gold_tracker")).fetchone()
+        result_potions = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(quantity),0)AS quant FROM potion_log")).fetchone()
+        result_ml = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(red),0) AS red_ml,
+                                                       COALESCE(SUM(green),0)  AS green_ml,
+                                                       COALESCE(SUM(blue),0) AS blue_ml,
+                                                       COALESCE(SUM(dark),0) AS dark_ml
+                                                       FROM barrel_ml_log""")).fetchone()
 
-        total_potions = 0
-        total_ml = 0
-        for quant in result_potions:
-            total_potions+= quant.quantity
         
-        for quant in result_ml:
-            total_ml += quant.mls
-        
-        # total_ml = int(result.num_green_ml) + int(result.num_red_ml) + int(result.num_blue_ml)
-        
-        total_gold = result_gold.gold
-        
-
+        total_ml = result_ml.red_ml + result_ml.green_ml + result_ml.blue_ml + result_ml.dark_ml
     
-    return {"number_of_potions": total_potions, "ml_in_barrels": total_ml, "gold": total_gold}
+    return {"number_of_potions": result_potions.quant, "ml_in_barrels": total_ml, "gold": result_gold.gold_amount}
 
 # Gets called once a day
 @router.post("/plan")

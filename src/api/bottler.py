@@ -23,74 +23,41 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
-        result_potions = connection.execute(sqlalchemy.text("""
-                                                        SELECT *
-                                                        FROM potion_storage
-                                                        """
-                                                    )).fetchall()     
-        #getting the row_ml that is there and then subtracting this later
-
-        total_red_ml = 0
-        total_green_ml = 0
-        total_blue_ml = 0
-        total_dark_ml = 0
-
-
-        potion_inventory = {}
-        for row in result_potions:
-            # potion_inventory[row.sku] = row.mls
-            potion_inventory_type = tuple([row.red_ml, row.green_ml, row.blue_ml, row.dark_ml])
-            #using potion_type as key
-            potion_inventory[potion_inventory_type] = {
-                'sku': row.sku,
-                'quantity': row.quantity
-            }
-
         for potion in potions_delivered:
-            potion_list = potion.potion_type
-                #check is that key exists, probably not the smartest thing to do but each potion type key is different
-            potion_key = tuple(potion_list)
-            if potion_key in potion_inventory:
-                potion_stuff = potion_inventory[potion_key]
-                potion_sku = potion_stuff['sku']
-                potion_quantity = potion_stuff['quantity']
 
-                actual_quantity= potion_quantity + potion.quantity
-        
+            print(f"Inserting ml into barrel_ml_log: red={-potion.potion_type[0] * potion.quantity}, green={-potion.potion_type[1] * potion.quantity}, 
+                  blue={-potion.potion_type[2] * potion.quantity}, dark={-potion.potion_type[3] * potion.quantity}")
+            print(f"Inserting potion into potion_log: pID={potion.potion_type}, quantity={potion.quantity}")
 
-                connection.execute(sqlalchemy.text("""
-                                UPDATE potion_storage 
-                                SET quantity = :new_quantity 
-                                WHERE sku = :sku
-                        """), {"new_quantity": actual_quantity, "sku": potion_sku})
-                
-                #update ml_storage based in potions made
-                total_red_ml += potion_list[0] * potion.quantity
-                total_green_ml += potion_list[1] * potion.quantity
-                total_blue_ml += potion_list[2] * potion.quantity
-                total_dark_ml += potion_list[3] * potion.quantity
-                
-                connection.execute(sqlalchemy.text("""
-                                        UPDATE ml_storage
-                                        SET mls = CASE sku
-                                            WHEN 'red' THEN mls - :red_ml
-                                            WHEN 'green' THEN mls - :green_ml
-                                            WHEN 'blue' THEN mls - :blue_ml
-                                            WHEN 'dark' THEN mls - :dark_ml
-                                            END
-                                        WHERE sku IN ('red', 'green', 'blue', 'dark')
-                                    """), {
-                                        "red_ml": total_red_ml,
-                                        "green_ml": total_green_ml,
-                                        "blue_ml": total_blue_ml,
-                                        "dark_ml": total_dark_ml
-                                    })
-                
-            
-            # else:
-            #     print ("error: Inavlid potion type")
-        
-        return "OK"
+            # Insert into barrel_ml_log for ml usage
+            connection.execute(sqlalchemy.text("""
+                INSERT INTO barrel_ml_log (red, green, blue, dark)
+                VALUES (:barrel_red_ml, :barrel_green_ml, :barrel_blue_ml, :barrel_dark_ml)
+            """), {
+                "barrel_red_ml": -potion.potion_type[0] * potion.quantity,
+                "barrel_green_ml": -potion.potion_type[1] * potion.quantity,
+                "barrel_blue_ml": -potion.potion_type[2] * potion.quantity,
+                "barrel_dark_ml": -potion.potion_type[3] * potion.quantity
+            })
+
+            # Insert into potion_log to track potion delivery
+            connection.execute(sqlalchemy.text("""
+                INSERT INTO potion_log (pID, quantity)
+                VALUES (
+                    (SELECT ID FROM potion_types WHERE red_ml = :red_ml AND green_ml = :green_ml 
+                    AND blue_ml = :blue_ml AND dark_ml = :dark_ml), 
+                    :quantity
+                )
+            """), {
+                "quantity": potion.quantity,
+                "red_ml": potion.potion_type[0],
+                "green_ml": potion.potion_type[1],
+                "blue_ml": potion.potion_type[2],
+                "dark_ml": potion.potion_type[3]
+            })
+
+print("OK")
+
 
 @router.post("/plan")
 
@@ -137,7 +104,10 @@ def get_bottle_plan():
             potion_type =  [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml]
 
             #check if i have enough to make that potion
-            while potion.red_ml < ml_inventory['red'] and potion.blue_ml < ml_inventory['blue'] and potion.green_ml < ml_inventory['green'] and potion.dark_ml < ml_inventory['dark']:
+            while (potion.red_ml < ml_inventory['red'] and 
+                   potion.blue_ml < ml_inventory['blue'] and 
+                   potion.green_ml < ml_inventory['green'] and 
+                   potion.dark_ml < ml_inventory['dark']):
                 
                 potions_made +=1
 

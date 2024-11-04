@@ -128,7 +128,9 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
                                              """),  
                                             [{"cart_id" : cart_id,"sku": item_sku ,"item_quantity": cart_item.quantity}])
     
-    print(f"message : Added {item_sku} to cart {cart_id} with quantity {cart_item.quantity}")
+    print(f"Item SKU: {item_sku}")
+    print(f"Cart ID: {cart_id}")
+    print(f"Quantity: {cart_item.quantity}")
 
     return "OK"
 
@@ -163,9 +165,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         with db.engine.begin() as connection:
             
             potion_to_buy = connection.execute(sqlalchemy.text("""
-                                                                    SELECT quantity, cost, sku
-                                                                    FROM potion_storage
-                                                                    WHERE potion_storage.sku = :sku
+                                                                    SELECT id, cost, sku
+                                                                    FROM potion_types
+                                                                    WHERE potion_types.sku = :sku
                                                                 """), {"sku": cart_info.sku}).first()
            
            
@@ -174,16 +176,15 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
            
             # Update potion quantity
             connection.execute(sqlalchemy.text("""
-                                                        UPDATE potion_storage
-                                                        SET quantity = quantity - :item_quantity
-                                                        WHERE potion_storage.sku = :sku
-                                                    """), {"item_quantity": cart_info.item_quantity, "sku": cart_info.sku})
+                                                        INSERT INTO potion_log (pID, quantity)
+                                                        VALUES (:pID,:quantity)
+                                                        """), {"pID": potion_to_buy.id, "quantity": -cart_info.item_quantity})
 
-            # Update gold_tracker
+            #Update gold_tracker
             connection.execute(sqlalchemy.text(""" 
-                                                        UPDATE gold_tracker
-                                                        SET gold = gold + :payment
-                                                    """), {"payment": cart_info.item_quantity * potion_to_buy.cost})
+                                                        INSERT INTO gold_tracker (gold)
+                                                        VALUES (:gold)
+                                                    """), {"gold": cart_info.item_quantity * potion_to_buy.cost})
 
             total_potions += cart_info.item_quantity
             gold_paid += cart_info.item_quantity * potion_to_buy.cost
