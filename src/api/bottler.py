@@ -102,7 +102,7 @@ def get_bottle_plan():
         }
       
     
-        potions_made = 0
+        
         bottled_up =[]
 
 
@@ -129,21 +129,27 @@ def get_bottle_plan():
                     green< ml_inventory['green'] and 
                     dark< ml_inventory['dark']):
                     
-                    potions_made +=1
 
-                    ml_inventory["red"] -= red
-                    ml_inventory["blue"] -= blue
-                    ml_inventory["dark"] -= dark
-                    ml_inventory["green"] -= green
-                
-                
-                if potions_made > 0:    
-                    bottled_up.append({
-                                "potion_type": potion_mix,
-                                "quantity": potions_made
-                                })
+                    max_potions_possible = min(
+                        (ml_inventory["red"] // red) if red > 0 else float('inf'),
+                        (ml_inventory["green"] // green) if green > 0 else float('inf'),
+                        (ml_inventory["blue"] // blue) if blue > 0 else float('inf'),
+                        (ml_inventory["dark"] // dark) if dark > 0 else float('inf'),
+                    )
 
-            potions_made =0
+                    
+                    if max_potions_possible > 0:
+                        # Update ml inventory
+                        ml_inventory["red_cur_ml"] -= red * max_potions_possible
+                        ml_inventory["green_cur_ml"] -= green * max_potions_possible
+                        ml_inventory["blue_cur_ml"] -= blue * max_potions_possible
+                        ml_inventory["dark_cur_ml"] -= dark * max_potions_possible
+
+                        bottled_up.append({
+                            "potion_type": potion_mix,
+                            "quantity": max_potions_possible
+                        })
+                
 
     print(bottled_up)
     return bottled_up
