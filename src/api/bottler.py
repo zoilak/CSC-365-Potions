@@ -23,11 +23,19 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     with db.engine.begin() as connection:
+        
         for potion in potions_delivered:
+            print(
+                        f"Inserting ml into barrel_ml_log: "
+                        f"red={-potion.potion_type[0] * potion.quantity}, "
+                        f"green={-potion.potion_type[1] * potion.quantity}, "
+                        f"blue={-potion.potion_type[2] * potion.quantity}, "
+                        f"dark={-potion.potion_type[3] * potion.quantity}"
+                    )
 
-            print(f"Inserting ml into barrel_ml_log: red={-potion.potion_type[0] * potion.quantity}, green={-potion.potion_type[1] * potion.quantity}, 
-                  blue={-potion.potion_type[2] * potion.quantity}, dark={-potion.potion_type[3] * potion.quantity}")
+# Print the potion log
             print(f"Inserting potion into potion_log: pID={potion.potion_type}, quantity={potion.quantity}")
+
 
             # Insert into barrel_ml_log for ml usage
             connection.execute(sqlalchemy.text("""
@@ -56,7 +64,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                 "dark_ml": potion.potion_type[3]
             })
 
-print("OK")
+    print("OK")
 
 
 @router.post("/plan")
