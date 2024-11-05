@@ -124,7 +124,7 @@ def get_bottle_plan():
                 potion_mix =  [red, green, blue, dark]
 
                 #check if i have enough to make that potion
-                while (red< ml_inventory['red'] and 
+                if (red< ml_inventory['red'] and 
                     blue< ml_inventory['blue'] and 
                     green< ml_inventory['green'] and 
                     dark< ml_inventory['dark']):
