@@ -72,26 +72,35 @@ def get_bottle_plan():
     """
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("""
-                                                        SELECT sku, mls, quantity
-                                                        FROM ml_storage
-                                                        WHERE sku IN ('red', 'blue', 'green', 'dark')
-                                                        """
-                                                    )).fetchall()
+        result_ml = connection.execute(sqlalchemy.text("""
+                        SELECT 
+                        COAELSCE(SUM(red),0) AS red_ml,
+                        COAELSCE(SUM(blue),0) AS blue_ml,
+                        COAELSCE(SUM(green),0) AS green_ml,
+                        COAELSCE(SUME(dark),0) AS dark_ml                                                                                       
+                        FROM barrel_ml_log       
+                        """
+                        )).fetchone()
         
         #only make potions for those that have less than 5 potion of potions in their storage
         result_potion = connection.execute(sqlalchemy.text("""
-                                                        SELECT *
-                                                        FROM potion_storage
-                                                        WHERE quantity < 5
-                    
-                                                        """
-                                                    )).fetchall()
+                        SELECT potion_types.sku, potion_types.cost, potion_types.red, 
+                        potion_types.green, potion_types.blue, potion_types.dark, 
+                        potion_types.name, COALESCE(SUM(potion_log.quantity),0) AS quantity
+                        FROM potion_log
+                        JOIN potion_types ON potion_log.pID = potion_types.id
+                        GROUP BY potion_types.id """
+                        )).fetchall()
        
        #returns a dictionary with color as key and ml as quantity
-        ml_inventory = {}
-        for row in result:
-            ml_inventory[row.sku] = row.mls
+
+        ml_inventory = {
+           "red_cur_ml": result_ml.red_ml,
+           "blue_cur_ml": result_ml.blue_ml,
+           "green_cur_ml": result_ml.green_ml,
+           "dark_cur_ml" : result_ml.dark_ml
+        }
+      
     
         potions_made = 0
         bottled_up =[]
@@ -99,29 +108,40 @@ def get_bottle_plan():
 
         #decided to use a simpler logic/ might go back to my previous bottling logic
         #for row (potion) from db
-        for potion in result_potion:
-           #how much ml is needed to make that potion
-            potion_type =  [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml]
+        for row in result_potion:
+            sku = row.sku
+            cost = row.cost
+            red = row.red
+            green = row.green
+            blue = row.blue
+            dark = row.dark
+            name = row.name
+            quantity = row.quantity
+            
+            #if that potion count is 0
+            if (quantity == 0):
+           
+                potion_mix =  [red, green, blue, dark]
 
-            #check if i have enough to make that potion
-            while (potion.red_ml < ml_inventory['red'] and 
-                   potion.blue_ml < ml_inventory['blue'] and 
-                   potion.green_ml < ml_inventory['green'] and 
-                   potion.dark_ml < ml_inventory['dark']):
+                #check if i have enough to make that potion
+                while (red< ml_inventory['red'] and 
+                    blue< ml_inventory['blue'] and 
+                    green< ml_inventory['green'] and 
+                    dark< ml_inventory['dark']):
+                    
+                    potions_made +=1
+
+                    ml_inventory["red"] -= red
+                    ml_inventory["blue"] -= blue
+                    ml_inventory["dark"] -= dark
+                    ml_inventory["green"] -= green
                 
-                potions_made +=1
-
-                ml_inventory["red"] -= potion.red_ml
-                ml_inventory["blue"] -= potion.blue_ml
-                ml_inventory["dark"] -= potion.dark_ml
-                ml_inventory["green"] -= potion.green_ml
-            
-            
-            if potions_made > 0:    
-                bottled_up.append({
-                            "potion_type": potion_type,
-                            "quantity": potions_made
-                            })
+                
+                if potions_made > 0:    
+                    bottled_up.append({
+                                "potion_type": potion_mix,
+                                "quantity": potions_made
+                                })
 
             potions_made =0
 
