@@ -25,44 +25,32 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     with db.engine.begin() as connection:
         
         for potion in potions_delivered:
-            print(
-                        f"Inserting ml into barrel_ml_log: "
-                        f"red={-potion.potion_type[0] * potion.quantity}, "
-                        f"green={-potion.potion_type[1] * potion.quantity}, "
-                        f"blue={-potion.potion_type[2] * potion.quantity}, "
-                        f"dark={-potion.potion_type[3] * potion.quantity}"
-                    )
-
-# Print the potion log
-            print(f"Inserting potion into potion_log: pID={potion.potion_type}, quantity={potion.quantity}")
-
+            print("potion_type contents:", potion.potion_type)  # This will print the contents of potion_type
+            print("potion quantity:", potion.quantity)
 
             # Insert into barrel_ml_log for ml usage
             connection.execute(sqlalchemy.text("""
                 INSERT INTO barrel_ml_log (red, green, blue, dark)
-                VALUES (:barrel_red_ml, :barrel_green_ml, :barrel_blue_ml, :barrel_dark_ml)
-            """), {
-                "barrel_red_ml": -potion.potion_type[0] * potion.quantity,
-                "barrel_green_ml": -potion.potion_type[1] * potion.quantity,
-                "barrel_blue_ml": -potion.potion_type[2] * potion.quantity,
-                "barrel_dark_ml": -potion.potion_type[3] * potion.quantity
-            })
+                VALUES (:red_ml, :green_ml, :blue_ml, :dark_ml)
+            """), [{
+                "red_ml": -potion.potion_type[0] * potion.quantity,
+                "green_ml": -potion.potion_type[1] * potion.quantity,
+                "blue_ml": -potion.potion_type[2] * potion.quantity,
+                "dark_ml": -potion.potion_type[3] * potion.quantity
+            }])
 
             # Insert into potion_log to track potion delivery
             connection.execute(sqlalchemy.text("""
-                INSERT INTO potion_log (pID, quantity)
+                INSERT INTO potion_log ("pID", quantity)
                 VALUES (
-                    (SELECT ID FROM potion_types WHERE red_ml = :red_ml AND green_ml = :green_ml 
-                    AND blue_ml = :blue_ml AND dark_ml = :dark_ml), 
-                    :quantity
-                )
-            """), {
+                    (SELECT id FROM potion_types WHERE red_ml = :red_ml AND green_ml = :green_ml 
+                    AND blue_ml = :blue_ml AND dark_ml = :dark_ml), :quantity)"""), [{
                 "quantity": potion.quantity,
                 "red_ml": potion.potion_type[0],
                 "green_ml": potion.potion_type[1],
                 "blue_ml": potion.potion_type[2],
                 "dark_ml": potion.potion_type[3]
-            })
+            }])
 
     print("OK")
 
@@ -82,22 +70,35 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         result_ml = connection.execute(sqlalchemy.text("""
                         SELECT 
-                        COAELSCE(SUM(red),0) AS red_ml,
-                        COAELSCE(SUM(blue),0) AS blue_ml,
-                        COAELSCE(SUM(green),0) AS green_ml,
-                        COAELSCE(SUME(dark),0) AS dark_ml                                                                                       
-                        FROM barrel_ml_log       
+                        COALESCE(SUM(red),0) AS red_ml,
+                        COALESCE(SUM(blue),0) AS blue_ml,
+                        COALESCE(SUM(green),0) AS green_ml,
+                        COALESCE(SUM(dark),0) AS dark_ml                                                                                      
+                        FROM barrel_ml_log;      
                         """
                         )).fetchone()
         
-        #only make potions for those that have less than 5 potion of potions in their storage
+     
         result_potion = connection.execute(sqlalchemy.text("""
-                        SELECT potion_types.sku, potion_types.cost, potion_types.red, 
-                        potion_types.green, potion_types.blue, potion_types.dark, 
-                        potion_types.name, COALESCE(SUM(potion_log.quantity),0) AS quantity
-                        FROM potion_log
-                        JOIN potion_types ON potion_log.pID = potion_types.id
-                        GROUP BY potion_types.id """
+                    SELECT potion_types.sku, 
+                        potion_types.cost, 
+                        potion_types.red, 
+                        potion_types.green, 
+                        potion_types.blue, 
+                        potion_types.dark, 
+                        potion_types.name, 
+                    COALESCE(SUM(potion_log.quantity), 0) AS quantity
+                    FROM potion_log
+                    JOIN potion_types ON potion_log.pID = potion_types.id
+                    GROUP BY potion_types.sku, 
+                        potion_types.cost, 
+                        potion_types.red, 
+                        potion_types.green, 
+                        potion_types.blue, 
+                        potion_types.dark, 
+                        potion_types.name, 
+                        potion_types.id
+                        ORDER BY random();"""
                         )).fetchall()
        
        #returns a dictionary with color as key and ml as quantity
@@ -113,9 +114,13 @@ def get_bottle_plan():
         
         bottled_up =[]
 
+        #make indivdual potion capacity limits, look at how many i currently have and dont bottle over
+
+        #add a boolean logic to only bottle certain potions
 
         #decided to use a simpler logic/ might go back to my previous bottling logic
         #for row (potion) from db
+        #put a while loop over all of it to add one potion at a time, fill all of them evenly
         for row in result_potion:
             sku = row.sku
             cost = row.cost
@@ -132,12 +137,9 @@ def get_bottle_plan():
                 potion_mix =  [red, green, blue, dark]
 
                 #check if i have enough to make that potion
-                if (red< ml_inventory['red'] and 
-                    blue< ml_inventory['blue'] and 
-                    green< ml_inventory['green'] and 
-                    dark< ml_inventory['dark']):
-                    
+                if (red< ml_inventory['red'] and blue< ml_inventory['blue'] and green< ml_inventory['green'] and dark< ml_inventory['dark']):
 
+                    #put number of capcity here
                     max_potions_possible = min(
                         (ml_inventory["red"] // red) if red > 0 else float('inf'),
                         (ml_inventory["green"] // green) if green > 0 else float('inf'),

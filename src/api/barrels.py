@@ -67,7 +67,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             """), {"gold_price": - gold_price })
     return "OK"
 
-# Gets called once a day
+# Gets called once a day , try buying equal amounts of ml in barrels
 
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
@@ -84,10 +84,10 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 COALESCE(SUM(blue), 0) AS blue_ml,                                 
                 COALESCE(SUM(dark), 0) AS dark_ml                                 
             FROM barrel_ml_log
-        """)).fetchone()
+                """)).fetchone()
         
-        result_gold = connection.execute(sqlalchemy.text("SELECT gold FROM gold_tracker")).one()
-        gold_amount = result_gold.gold
+        result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold), 0) AS total_gold FROM gold_tracker")).fetchone()
+        gold_amount = result_gold.total_gold
 
         barrels_to_purchase = []
         # Inventory types and maximum ml allowed for each type
