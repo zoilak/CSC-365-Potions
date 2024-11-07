@@ -19,7 +19,7 @@ def get_catalog():
                 potion_types.green, potion_types.blue, potion_types.dark, 
                 potion_types.name, COALESCE(SUM(potion_log.quantity),0) AS quantity
                 FROM potion_log
-                JOIN potion_types ON potion_log.pID = potion_types.id
+                JOIN potion_types ON potion_log.pid = potion_types.id
                 GROUP BY potion_types.id                                    
                  """)).fetchall()
         

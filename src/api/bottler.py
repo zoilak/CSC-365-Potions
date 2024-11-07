@@ -41,7 +41,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
             # Insert into potion_log to track potion delivery
             connection.execute(sqlalchemy.text("""
-                INSERT INTO potion_log ("pID", quantity)
+                INSERT INTO potion_log (pid, quantity)
                 VALUES (
                     (SELECT id FROM potion_types WHERE red_ml = :red_ml AND green_ml = :green_ml 
                     AND blue_ml = :blue_ml AND dark_ml = :dark_ml), :quantity)"""), [{
@@ -80,34 +80,35 @@ def get_bottle_plan():
         
      
         result_potion = connection.execute(sqlalchemy.text("""
-                    SELECT potion_types.sku, 
+                    SELECT 
+                        potion_types.sku, 
                         potion_types.cost, 
-                        potion_types.red, 
-                        potion_types.green, 
-                        potion_types.blue, 
-                        potion_types.dark, 
+                        potion_types.red_ml, 
+                        potion_types.green_ml, 
+                        potion_types.blue_ml, 
+                        potion_types.dark_ml, 
                         potion_types.name, 
-                    COALESCE(SUM(potion_log.quantity), 0) AS quantity
+                        COALESCE(SUM(potion_log.quantity), 0) AS quantity
                     FROM potion_log
-                    JOIN potion_types ON potion_log.pID = potion_types.id
-                    GROUP BY potion_types.sku, 
+                    RIGHT JOIN potion_types ON potion_log.pid = potion_types.id
+                    GROUP BY 
+                        potion_types.sku, 
                         potion_types.cost, 
-                        potion_types.red, 
-                        potion_types.green, 
-                        potion_types.blue, 
-                        potion_types.dark, 
-                        potion_types.name, 
-                        potion_types.id
-                        ORDER BY random();"""
+                        potion_types.red_ml, 
+                        potion_types.green_ml, 
+                        potion_types.blue_ml, 
+                        potion_types.dark_ml, 
+                        potion_types.name
+                    ORDER BY random();"""
                         )).fetchall()
        
        #returns a dictionary with color as key and ml as quantity
 
         ml_inventory = {
-           "red_cur_ml": result_ml.red_ml,
-           "blue_cur_ml": result_ml.blue_ml,
-           "green_cur_ml": result_ml.green_ml,
-           "dark_cur_ml" : result_ml.dark_ml
+           "red": result_ml.red_ml,
+           "blue": result_ml.blue_ml,
+           "green": result_ml.green_ml,
+           "dark" : result_ml.dark_ml
         }
       
     
@@ -124,10 +125,10 @@ def get_bottle_plan():
         for row in result_potion:
             sku = row.sku
             cost = row.cost
-            red = row.red
-            green = row.green
-            blue = row.blue
-            dark = row.dark
+            red = row.red_ml
+            green = row.green_ml
+            blue = row.blue_ml
+            dark = row.dark_ml
             name = row.name
             quantity = row.quantity
             
