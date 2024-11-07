@@ -17,7 +17,7 @@ router = APIRouter(
 def get_inventory():
     """ call all potions, call gold, call ml"""
     with db.engine.begin() as connection:
-        result_gold = connection.execute(sqlalchemy.text("SELECT COAELSCE(SUM(gold),0) as gold_amount FROM gold_tracker")).fetchone()
+        result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).fetchone()
         result_potions = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(quantity),0)AS quant FROM potion_log")).fetchone()
         result_ml = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(red),0) AS red_ml,
                                                        COALESCE(SUM(green),0)  AS green_ml,
