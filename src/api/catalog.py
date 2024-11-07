@@ -15,12 +15,25 @@ def get_catalog():
     with db.engine.begin() as connection:
         # get all of the potions that are not 0
         result = connection.execute(sqlalchemy.text("""
-                SELECT potion_types.sku, potion_types.cost, potion_types.red, 
-                potion_types.green, potion_types.blue, potion_types.dark, 
-                potion_types.name, COALESCE(SUM(potion_log.quantity),0) AS quantity
-                FROM potion_log
-                JOIN potion_types ON potion_log.pid = potion_types.id
-                GROUP BY potion_types.id                                    
+                SELECT 
+                        potion_types.sku, 
+                        potion_types.cost, 
+                        potion_types.red_ml, 
+                        potion_types.green_ml, 
+                        potion_types.blue_ml, 
+                        potion_types.dark_ml, 
+                        potion_types.name, 
+                        COALESCE(SUM(potion_log.quantity), 0) AS quantity
+                    FROM potion_log
+                    RIGHT JOIN potion_types ON potion_log.pid = potion_types.id
+                    GROUP BY 
+                        potion_types.sku, 
+                        potion_types.cost, 
+                        potion_types.red_ml, 
+                        potion_types.green_ml, 
+                        potion_types.blue_ml, 
+                        potion_types.dark_ml, 
+                        potion_types.name                                   
                  """)).fetchall()
         
         potions_on_catalog = 0
