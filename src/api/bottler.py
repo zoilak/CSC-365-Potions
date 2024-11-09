@@ -122,6 +122,7 @@ def get_bottle_plan():
         #decided to use a simpler logic/ might go back to my previous bottling logic
         #for row (potion) from db
         #put a while loop over all of it to add one potion at a time, fill all of them evenly'
+        total_potion_count = 0
         potion_made = True
         while potion_made:
             potion_made = False
@@ -136,35 +137,43 @@ def get_bottle_plan():
                 quantity = row.quantity
                 
                 #if that potion count is 0
-                if (quantity < 100):
+                if (quantity <= 100):
             
                     potion_mix =  [red, green, blue, dark]
 
                     #check if i have enough to make that potion
-                    if (red<= ml_inventory['red'] and blue<= ml_inventory['blue'] and green<=ml_inventory['green'] and dark<= ml_inventory['dark']):
+                    if (red<= ml_inventory['red'] and blue<= ml_inventory['blue'] 
+                        and green<=ml_inventory['green'] and dark<= ml_inventory['dark']):
 
                         #put number of capcity here
-                        max_potions_possible = min(
-                            (ml_inventory["red"] // red) if red > 0 else float('inf'),
-                            (ml_inventory["green"] // green) if green > 0 else float('inf'),
-                            (ml_inventory["blue"] // blue) if blue > 0 else float('inf'),
-                            (ml_inventory["dark"] // dark) if dark > 0 else float('inf'),
-                        )
+                        # max_potions_possible = min(
+                        #     (ml_inventory["red"] // red) if red > 0 else float('inf'),
+                        #     (ml_inventory["green"] // green) if green > 0 else float('inf'),
+                        #     (ml_inventory["blue"] // blue) if blue > 0 else float('inf'),
+                        #     (ml_inventory["dark"] // dark) if dark > 0 else float('inf'),
+                        # )
 
                         
-                        if max_potions_possible > 0:
-                            # Update ml inventory
-                            ml_inventory["red"] -= red * max_potions_possible
-                            ml_inventory["green"] -= green * max_potions_possible
-                            ml_inventory["blue"] -= blue * max_potions_possible
-                            ml_inventory["dark"] -= dark * max_potions_possible
+                        # if max_potions_possible > 0:
+                        #     # Update ml inventory
+                        #     ml_inventory["red"] -= red * max_potions_possible
+                        #     ml_inventory["green"] -= green * max_potions_possible
+                        #     ml_inventory["blue"] -= blue * max_potions_possible
+                        #     ml_inventory["dark"] -= dark * max_potions_possible
+
+                            ml_inventory["red"] -= red 
+                            ml_inventory["green"] -= green
+                            ml_inventory["blue"] -= blue
+                            ml_inventory["dark"] -= dark 
+
 
                             bottled_up.append({
                                 "potion_type": potion_mix,
-                                "quantity": max_potions_possible
+                                "quantity": 1
                             })
-                            print(f"Just made potion {name}. Remaining ml: red={ml_inventory['red']}, green={ml_inventory['green']}, blue={ml_inventory['blue']}, dark={ml_inventory['dark']}")
-
+                            print(f"Just made 1 potion {name}. Remaining ml: red={ml_inventory['red']}, green={ml_inventory['green']}, blue={ml_inventory['blue']}, dark={ml_inventory['dark']}")
+                            potion_made = True
+                            total_potion_count +=1
                     else:
                         print(f"Not enough ml for {name}. Required: red={red}, green={green}, blue={blue}, dark={dark}")
 

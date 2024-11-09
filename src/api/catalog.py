@@ -41,7 +41,7 @@ def get_catalog():
     for potion in result:
         potion_amount = potion.quantity
 
-        if potion_amount!=0 and potions_on_catalog <6:
+        if potion_amount!=0 and potions_on_catalog <11:
             catalog.append({
                 "sku": potion.sku,
                 "name": potion.name,
@@ -50,6 +50,9 @@ def get_catalog():
                 "potion_type": [potion.red_ml, potion.green_ml, potion.blue_ml, potion.dark_ml],
             })
             potions_on_catalog+=1
+
+    # Sort catalog by quantity in descending order and slice the top 6 potions
+    catalog = sorted(catalog, key=lambda x: x['quantity'], reverse=True)[:6]
 
     #what exactly is in catalog
     for available in catalog:
