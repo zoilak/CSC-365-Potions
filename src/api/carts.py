@@ -23,8 +23,6 @@ class search_sort_order(str, Enum):
     asc = "asc"
     desc = "desc"  
 
- 
-
 @router.get("/search/", tags=["search"])
 def search_orders(
     customer_name: str = "",
@@ -33,7 +31,6 @@ def search_orders(
     sort_col: search_sort_options = search_sort_options.timestamp,
     sort_order: search_sort_order = search_sort_order.desc,
 ):
-
 
     """
     Search for cart line items by customer name and/or potion sku.
@@ -58,26 +55,24 @@ def search_orders(
     customer name, line item total (in gold), and timestamp of the order.
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
-    """
-    #with db.engine.begin() as connection:
-        
+    """    
     conditions = []
     params = {}
 
-    sql_log= connection.execute(sqlalchemy.text("""
+    sql_log= """
                     SELECT cart_line_items.id AS entry_id,
                         cart_line_items.cart_id, 
                         cart.customer_name AS customer_name,
-                        cart_line_items.created_at AS time, 
-                        cart_items.count_to_buy AS potion_amount, 
+                        cart_line_items.created_at AS timestamp, 
+                        cart_line_items.item_quantity AS potion_amount, 
                         potion_types.cost AS potion_cost,
                         cart_line_items.item_quantity,
                         CONCAT(cart_line_items.item_quantity, ' ', cart_line_items.sku) AS item_sku, 
-                        cart_line_items.item_qunatity * potion_types.cost AS line_item_total
+                        cart_line_items.item_quantity * potion_types.cost AS total
                     FROM cart_line_items
-                    JOIN cart ON carts.cart_id = cart_items.cart_id
+                    JOIN cart ON cart.id = cart_line_items.cart_id
                     JOIN potion_types ON cart_line_items.sku = potion_types.sku
-                    """)).fetchall()
+                    """
     
     #Search for cart line items by customer name and/or potion sku.
     if customer_name:
@@ -92,19 +87,66 @@ def search_orders(
     if conditions:
         sql_log += " WHERE " + " AND ".join(conditions)
     
+    #sorting
+    sql_log+=  " " + "ORDER BY " + sort_col + " " + sort_order.upper() + " "    
+
+    #max pages check
+    # Pagination set up
+    if search_page:
+        search_page = int(search_page)
+    else:
+        search_page = 0
+    
+    offset = search_page * 5
+    params["offset"] = offset
+
+    sql_log +="LIMIT 5 OFFSET :offset"
+
+    with db.engine.begin() as connection:
+        rows = connection.execute(sqlalchemy.text(sql_log),params).fetchall()
+        
+        count_query = """
+            SELECT COUNT(*)
+            FROM cart_line_items
+            JOIN cart ON cart_line_items.cart_id = cart.id
+            JOIN potion_types ON cart_line_items.sku = potion_types.sku
+        """
+
+        if conditions:
+            count_query += " WHERE " + " AND ".join(conditions)
+
+        total_count = connection.execute(sqlalchemy.text(count_query), params).scalar()
+        
+        
+    # Determine previous and next pages
+    if offset + 5 < total_count:
+        next_page = str(search_page + 1)
+    
+    else:
+        next_page = ""
+     
+    if search_page > 0: 
+        previous_page = str(search_page - 1)
+    else:
+        
+        previous_page = ""
+    
+    final_list = []
+        
+    for item in rows:
+        final_list.append({
+            "line_item_id": item.entry_id,
+            "item_sku": item.item_sku,
+            "customer_name": item.customer_name,
+            "line_item_total": item.total,
+            "timestamp": item.timestamp,
+        })
+    
         
     return {
-        "previous": "",
-        "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "previous": previous_page,
+        "next": next_page,
+        "results": final_list
     }
 
 
