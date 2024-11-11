@@ -21,7 +21,9 @@ class search_sort_options(str, Enum):
 
 class search_sort_order(str, Enum):
     asc = "asc"
-    desc = "desc"   
+    desc = "desc"  
+
+ 
 
 @router.get("/search/", tags=["search"])
 def search_orders(
@@ -31,6 +33,8 @@ def search_orders(
     sort_col: search_sort_options = search_sort_options.timestamp,
     sort_order: search_sort_order = search_sort_order.desc,
 ):
+
+
     """
     Search for cart line items by customer name and/or potion sku.
 
@@ -55,7 +59,40 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
+    #with db.engine.begin() as connection:
+        
+    conditions = []
+    params = {}
 
+    sql_log= connection.execute(sqlalchemy.text("""
+                    SELECT cart_line_items.id AS entry_id,
+                        cart_line_items.cart_id, 
+                        cart.customer_name AS customer_name,
+                        cart_line_items.created_at AS time, 
+                        cart_items.count_to_buy AS potion_amount, 
+                        potion_types.cost AS potion_cost,
+                        cart_line_items.item_quantity,
+                        CONCAT(cart_line_items.item_quantity, ' ', cart_line_items.sku) AS item_sku, 
+                        cart_line_items.item_qunatity * potion_types.cost AS line_item_total
+                    FROM cart_line_items
+                    JOIN cart ON carts.cart_id = cart_items.cart_id
+                    JOIN potion_types ON cart_line_items.sku = potion_types.sku
+                    """)).fetchall()
+    
+    #Search for cart line items by customer name and/or potion sku.
+    if customer_name:
+        conditions.append("customer_name ILIKE :customer_name_param") #ILIKE performs parameter matching
+        params["customer_name_param"] = f"%{customer_name}%"
+
+    if potion_sku:
+        conditions.append("potion_types.sku ILIKE :potion_name_param")
+        params["potion_name_param"] = f"%{potion_sku}%"
+    
+    #after checking customer name and potion sku
+    if conditions:
+        sql_log += " WHERE " + " AND ".join(conditions)
+    
+        
     return {
         "previous": "",
         "next": "",
