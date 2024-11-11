@@ -52,16 +52,10 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                 "dark_ml": potion.potion_type[3]
             }])
 
-    print("OK")
+    return "OK"
 
 
 @router.post("/plan")
-
-
-#yellow = red and green
-#violet = red and blue
-#cyan = green and blue
-#     = 
 def get_bottle_plan():
     """
     Go from barrel to bottle. Max 100 ml each bottle, can mix up
@@ -145,21 +139,6 @@ def get_bottle_plan():
                 if (red<= ml_inventory['red'] and blue<= ml_inventory['blue'] 
                     and green<=ml_inventory['green'] and dark<= ml_inventory['dark']):
 
-                    #put number of capcity here
-                    # max_potions_possible = min(
-                    #     (ml_inventory["red"] // red) if red > 0 else float('inf'),
-                    #     (ml_inventory["green"] // green) if green > 0 else float('inf'),
-                    #     (ml_inventory["blue"] // blue) if blue > 0 else float('inf'),
-                    #     (ml_inventory["dark"] // dark) if dark > 0 else float('inf'),
-                    # )
-
-                    
-                    # if max_potions_possible > 0:
-                    #     # Update ml inventory
-                    #     ml_inventory["red"] -= red * max_potions_possible
-                    #     ml_inventory["green"] -= green * max_potions_possible
-                    #     ml_inventory["blue"] -= blue * max_potions_possible
-                    #     ml_inventory["dark"] -= dark * max_potions_possible
 
                         ml_inventory["red"] -= red 
                         ml_inventory["green"] -= green
@@ -178,7 +157,7 @@ def get_bottle_plan():
                     print(f"Not enough ml for {name}. Required: red={red}, green={green}, blue={blue}, dark={dark}")
 
 
-    print(bottled_up)
+        
     return bottled_up
 
 if __name__ == "__main__":
