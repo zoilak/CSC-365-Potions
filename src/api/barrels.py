@@ -113,21 +113,22 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         bool_logic = False
         # Loop through each barrel type in the shuffled catalog
         for barrel in wholesale_catalog:
+            if "mini" not in barrel.sku.lower():
         # Check affordability of barrel
-            if barrel.potion_type == properties ['color_vector'] and barrel.price <= gold_amount:
-                barrels_to_purchase.append({
-                                "sku": barrel.sku,
-                                "quantity": 1
-                            })
-                gold_amount -=barrel.price
-                properties['ml'] +=barrel.ml_per_barrel
-                bool_logic = True
+                if barrel.potion_type == properties ['color_vector'] and barrel.price <= gold_amount:
+                    barrels_to_purchase.append({
+                                    "sku": barrel.sku,
+                                    "quantity": 1
+                                })
+                    gold_amount -=barrel.price
+                    properties['ml'] +=barrel.ml_per_barrel
+                    bool_logic = True
 
-                # Print the purchased barrel for tracking
-                print(f"Purchased 1 barrel of {barrel.sku} for potion type {ml_to_buy}.")
-                print(f"Remaining gold: {gold_amount}")
-                print(f"New ml for {ml_to_buy}: {properties['ml']}")
-                break  # Exit the loop once a barrel is purchased
+                    # Print the purchased barrel for tracking
+                    print(f"Purchased 1 barrel of {barrel.sku} for potion type {ml_to_buy}.")
+                    print(f"Remaining gold: {gold_amount}")
+                    print(f"New ml for {ml_to_buy}: {properties['ml']}")
+                    break  # Exit the loop once a barrel is purchased
 
         if not bool_logic:
             print("No more affordable barrels or no barrel matches the lowest ml potion type.")

@@ -38,6 +38,7 @@ def get_catalog():
         
         potions_on_catalog = 0
 
+    #maybe track wht potions actually sell down the road?
     for potion in result:
         potion_amount = potion.quantity
 
