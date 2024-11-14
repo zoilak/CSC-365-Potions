@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import pydantic
 from src.api import auth
 import math
+
 import sqlalchemy
 from src import database as db
 
@@ -27,6 +28,15 @@ def get_inventory():
 
         
         total_ml = result_ml.red_ml + result_ml.green_ml + result_ml.blue_ml + result_ml.dark_ml
+
+        result_potion_types = connection.execute(sqlalchemy.text("""SELECT pid, (SUM(quantity)) AS 
+                                                                 quantity FROM potion_log GROUP BY pid""")).fetchall()
+
+        print("Detailed Potion Inventory:")
+        for potion in result_potion_types:
+            print(f"Potion ID: {potion.pid}, Quantity: {potion.quantity}")
+
+      
     
     return {"number_of_potions": result_potions.quant, "ml_in_barrels": total_ml, "gold": result_gold.gold_amount}
 
@@ -37,10 +47,33 @@ def get_capacity_plan():
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
+    cur_inventory = get_inventory()
+    cur_potions = cur_inventory["number_of_potions"]
+    cur_ml = cur_inventory["ml_in_barrels"]
+    cur_gold = cur_inventory["gold"]
 
+    potion_cap = 50
+    ml_cap = 10000
+    cost_cap = 1000
+    
+    potion_capacity = 0
+    ml_capacity = 0
+
+    potion_threshold = float(cur_potions) * float(potion_cap) * 0.9
+    ml_threshold = float(cur_ml) * float(ml_cap) * 0.9
+    gold_check = float(cur_gold) * float(cost_cap) * 0.9
+
+    #if potion_capacity reaches threshold, increase it by 1
+    if (cur_potions > potion_threshold) and (cur_gold > gold_check) :
+        potion_capacity = 1
+
+    #if ml_capacity reaches threshold increas it by 1
+    if (cur_ml > ml_threshold) and (cur_gold > gold_check) :
+        ml_capacity = 1
+    
     return {
-        "potion_capacity": 0,
-        "ml_capacity": 0
+        "potion_capacity": potion_capacity,
+        "ml_capacity": ml_capacity
         }
 
 class CapacityPurchase(pydantic.BaseModel):
@@ -54,5 +87,22 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
+    total_cost = (capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) * 1000
 
+    with db.engine.begin() as connection:
+        
+        result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).fetchone()
+
+        if (result_gold.gold_amount > total_cost):
+        
+        # Deduct the gold from the gold tracker
+            connection.execute(sqlalchemy.text(
+                "UPDATE gold_tracker SET gold = gold - :cost"), {"cost": total_cost})
+
+            # Increase potion and ml capacities
+            connection.execute(sqlalchemy.text(
+                "UPDATE capacity_plan SET potion_capacity = potion_capacity + :potion_capacity, "
+                "ml_capacity = ml_capacity + :ml_capacity"),
+                {"potion_capacity": capacity_purchase.potion_capacity, "ml_capacity": capacity_purchase.ml_capacity})
+                
     return "OK"

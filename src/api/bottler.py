@@ -96,8 +96,7 @@ def get_bottle_plan():
                     ORDER BY random();"""
                         )).fetchall()
        
-       #returns a dictionary with color as key and ml as quantity
-
+    #a dictionary with color as key and ml as quantity
     ml_inventory = {
         "red": result_ml.red_ml,
         "blue": result_ml.blue_ml,
