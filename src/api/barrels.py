@@ -140,6 +140,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     print(f"Remaining gold: {gold_amount}")
                     print(f"New ml for {ml_to_buy}: {properties['ml']}")
                      # Exit the loop once a barrel is purchased
+                    break
 
         if not bool_logic:
             print("No more affordable barrels or no barrel matches the lowest ml potion type.")
