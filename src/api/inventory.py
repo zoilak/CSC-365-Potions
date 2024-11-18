@@ -59,17 +59,17 @@ def get_capacity_plan():
     potion_capacity = 0
     ml_capacity = 0
 
-    potion_threshold = float(cur_potions) * float(potion_cap) * 0.9
-    ml_threshold = float(cur_ml) * float(ml_cap) * 0.9
-    gold_check = float(cur_gold) * float(cost_cap) * 0.2
+    # potion_threshold = float(cur_potions) * float(potion_cap) * 0.2
+    # ml_threshold = float(cur_ml) * float(ml_cap) * 0.2
+    # gold_check = float(cur_gold) * float(cost_cap) * 0.2
 
     #if potion_capacity reaches threshold, increase it by 1
-    if (cur_potions > potion_threshold) and (cur_gold > gold_check) :
-        potion_capacity = 1
+    if (cur_gold > 2000) :
+        potion_capacity += 1
 
     #if ml_capacity reaches threshold increas it by 1
-    if (cur_ml > ml_threshold) and (cur_gold > gold_check) :
-        ml_capacity = 1
+    if (cur_gold > 2000) :
+        ml_capacity += 1
     
     return {
         "potion_capacity": potion_capacity,
