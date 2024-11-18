@@ -100,12 +100,12 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
     }
 
-    #current max ml among all barrels
-    max_ml_target = max(barrel['ml'] for barrel in local_barrels.values())
+    # #current max ml among all barrels
+    # max_ml_target = max(barrel['ml'] for barrel in local_barrels.values())
 
-    if max_ml_target == 0:
-        min_barrel_ml = min(barrel.ml_per_barrel for barrel in wholesale_catalog)
-        max_ml_target = min_barrel_ml
+    # if max_ml_target == 0:
+    #     min_barrel_ml = min(barrel.ml_per_barrel for barrel in wholesale_catalog)
+    #     max_ml_target = min_barrel_ml
 
     #my logic is to buy barrels till i have equlal amount of ml across all potion tyes
     while gold_amount > 0:
@@ -118,8 +118,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         #     break 
 
         # Skip if this type has already reached the max ml target
-        if properties['ml'] >= max_ml_target:
-            continue
+        # if properties['ml'] >= max_ml_target:
+        #     continue
 
         bool_logic = False
         # Loop through each barrel type in the shuffled catalog
