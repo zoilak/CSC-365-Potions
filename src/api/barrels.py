@@ -108,7 +108,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     #     max_ml_target = min_barrel_ml
 
     #my logic is to buy barrels till i have equlal amount of ml across all potion tyes
-    while gold_amount > 0:
+    while gold_amount > 1000:
 
         ml_to_buy = min(local_barrels,key=lambda k: local_barrels[k]['ml'])
         properties = local_barrels[ml_to_buy]
