@@ -87,8 +87,8 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
         
         result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).scalar()
        
-        if (result_gold >10000):
-            
+        if (result_gold >9000):
+
             if (capacity_purchase.potion_capacity!=0):
                 connection.execute(sqlalchemy.text(""" 
                                                             INSERT INTO gold_tracker (gold)
