@@ -99,11 +99,11 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
     }
 
-    TARGET_ML = 5000  # Fixed target for each potion type
+    TARGET_ML = 2500  # Fixed target for each potion type
     barrels_to_purchase = []
 
     # Iterate until you either run out of gold or all potion types reach TARGET_ML
-    while gold_amount > 1000:
+    while gold_amount > 0:
         purchase_made = False  # Track if a purchase is made in this loop
         
         # Iterate through each potion type with its current ml

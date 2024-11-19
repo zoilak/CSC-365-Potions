@@ -115,7 +115,7 @@ def get_bottle_plan():
     #decided to use a simpler logic/ might go back to my previous bottling logic
     #for row (potion) from db
     #put a while loop over all of it to add one potion at a time, fill all of them evenly'
-    max_potions = 100
+    max_potions = 50
     total_potion_count = 0
     potion_made = True
     while potion_made:
