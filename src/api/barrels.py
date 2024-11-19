@@ -46,7 +46,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         elif barrel.potion_type == [0,0,0,1]:
             barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
 
-    print(f"Calculated ml amounts - Red: {barrel_red_ml}, Green: {barrel_green_ml}, Blue: {barrel_blue_ml}, Dark: {barrel_dark_ml}")
+    print(f"Calculated ml amounts purchased - Red: {barrel_red_ml}, Green: {barrel_green_ml}, Blue: {barrel_blue_ml}, Dark: {barrel_dark_ml}")
     print(f"Total gold spent: {gold_price}")
     
     with db.engine.begin() as connection:
@@ -99,7 +99,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
     }
 
-    TARGET_ML = 2500  # Fixed target for each potion type
+    TARGET_ML = 5000  # Fixed target for each potion type
     barrels_to_purchase = []
 
     # Iterate until you either run out of gold or all potion types reach TARGET_ML

@@ -137,7 +137,7 @@ def get_bottle_plan():
                    
 
                 #if that potion count is 0
-            if (quantity <= 50):
+            if (quantity <= 30):
         
                 potion_mix =  [red, green, blue, dark]
 
