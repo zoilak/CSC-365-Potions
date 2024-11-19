@@ -53,15 +53,11 @@ def get_capacity_plan():
     potion_capacity = 0
     ml_capacity = 0
 
-    # potion_threshold = float(cur_potions) * float(potion_cap) * 0.2
-    # ml_threshold = float(cur_ml) * float(ml_cap) * 0.2
-    # gold_check = float(cur_gold) * float(cost_cap) * 0.2
-
     #if potion_capacity reaches threshold, increase it by 1
     if (cur_gold > 1000) :
         potion_capacity += 1
 
-    #if ml_capacity reaches threshold increas it by 1
+    #if ml_capacity reaches threshold increase it by 1
     if (cur_gold > 1000) :
         ml_capacity += 1
     
@@ -87,7 +83,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
         
         result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).scalar()
        
-        if (result_gold >9000):
+        if (result_gold >2000):
 
             if (capacity_purchase.potion_capacity!=0):
                 connection.execute(sqlalchemy.text(""" 
