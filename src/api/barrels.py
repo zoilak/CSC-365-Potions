@@ -103,7 +103,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     barrels_to_purchase = []
 
     # Iterate until you either run out of gold or all potion types reach TARGET_ML
-    while gold_amount > 0:
+    while gold_amount > 1000:
         purchase_made = False  # Track if a purchase is made in this loop
         
         # Iterate through each potion type with its current ml
