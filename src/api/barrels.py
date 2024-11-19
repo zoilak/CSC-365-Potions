@@ -120,7 +120,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             # Attempt to purchase a suitable barrel
             for barrel in matching_barrels:
                 # Check affordability and if the barrel has stock
-                if barrel.price <= gold_amount and barrel.quantity > 0:
+                if barrel.price <= gold_amount and barrel.quantity > 0 and "mini" not in barrel.sku.lower():
                     barrels_needed = (TARGET_ML - properties['ml']) // barrel.ml_per_barrel
                     barrels_to_buy = min(barrels_needed, barrel.quantity)  # Max barrels to buy
                     
