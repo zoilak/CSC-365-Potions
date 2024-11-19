@@ -48,13 +48,7 @@ def get_capacity_plan():
     capacity unit costs 1000 gold.
     """
     cur_inventory = get_inventory()
-    cur_potions = cur_inventory["number_of_potions"]
-    cur_ml = cur_inventory["ml_in_barrels"]
     cur_gold = cur_inventory["gold"]
-
-    potion_cap = 50
-    ml_cap = 10000
-    cost_cap = 1000
     
     potion_capacity = 0
     ml_capacity = 0
@@ -87,22 +81,27 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     Start with 1 capacity for 50 potions and 1 capacity for 10000 ml of potion. Each additional 
     capacity unit costs 1000 gold.
     """
-    total_cost = (capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) * 1000
+    cost = 1000
 
     with db.engine.begin() as connection:
         
-        result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).fetchone()
-
-        if (result_gold.gold_amount > total_cost):
+        if (capacity_purchase.potion_capacity!=0):
+            connection.execute(sqlalchemy.text(
+                "UPDATE gold_tracker SET gold = gold - :cost"), {"cost": cost})
+            
+            connection.execute(sqlalchemy.text(
+                "UPDATE capacity_plan SET potion_capacity = potion_capacity + :potion_capacity"),
+                {"potion_capacity": capacity_purchase.potion_capacity})
+                    
+        if (capacity_purchase.ml_capacity !=0):
         
         # Deduct the gold from the gold tracker
             connection.execute(sqlalchemy.text(
-                "UPDATE gold_tracker SET gold = gold - :cost"), {"cost": total_cost})
+                    "UPDATE gold_tracker SET gold = gold - :cost"), {"cost": cost})
 
             # Increase potion and ml capacities
             connection.execute(sqlalchemy.text(
-                "UPDATE capacity_plan SET potion_capacity = potion_capacity + :potion_capacity, "
-                "ml_capacity = ml_capacity + :ml_capacity"),
-                {"potion_capacity": capacity_purchase.potion_capacity, "ml_capacity": capacity_purchase.ml_capacity})
+                "UPDATE capacity_plan SET ml_capacity = ml_capacity + :ml_capacity"),
+                {"ml_capacity": capacity_purchase.ml_capacity})
                 
     return "OK"
