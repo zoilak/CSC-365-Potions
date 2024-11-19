@@ -91,10 +91,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold), 0) AS total_gold FROM gold_tracker")).fetchone()
     gold_amount = result_gold.total_gold
 
-    max_gold = 10,000
-
-
-    barrels_to_purchase = []
     # Inventory types and maximum ml allowed for each type
     local_barrels = {
         'red': {'ml': result_barrel.red_ml, 'color_vector': [1, 0, 0, 0]},
@@ -103,54 +99,61 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
     }
 
-    # #current max ml among all barrels
-    # max_ml_target = max(barrel['ml'] for barrel in local_barrels.values())
+    TARGET_ML = 2500  # Fixed target for each potion type
+    barrels_to_purchase = []
 
-    # if max_ml_target == 0:
-    #     min_barrel_ml = min(barrel.ml_per_barrel for barrel in wholesale_catalog)
-    #     max_ml_target = min_barrel_ml
-
-    #my logic is to buy barrels till i have equlal amount of ml across all potion tyes
-    while gold_amount > 100000:
-
-        ml_to_buy = min(local_barrels,key=lambda k: local_barrels[k]['ml'])
-        properties = local_barrels[ml_to_buy]
-
-        #add a money logic check if brarrel amount is equal and gold is 0
-        # if all(properties['ml'] == min_ml_value for properties in local_barrels.values()):
-        #     break 
-
-        # Skip if this type has already reached the max ml target
-        # if properties['ml'] >= max_ml_target:
-        #     continue
-
-        bool_logic = False
-        # Loop through each barrel type in the shuffled catalog
-        for barrel in wholesale_catalog:
-            if "mini" not in barrel.sku.lower():
-        # Check affordability of barrel
-                if barrel.potion_type == properties ['color_vector'] and barrel.price <= gold_amount:
-                    barrels_to_purchase.append({
-                                    "sku": barrel.sku,
-                                    "quantity": 1
-                                })
-                    gold_amount -=barrel.price
-                    properties['ml'] +=barrel.ml_per_barrel
-                    bool_logic = True
-
-                    # Print the purchased barrel for tracking
-                    print(f"Purchased 1 barrel of {barrel.sku} for potion type {ml_to_buy}.")
-                    print(f"Remaining gold: {gold_amount}")
-                    print(f"New ml for {ml_to_buy}: {properties['ml']}")
-                
-
-        if not bool_logic:
-            print("No more affordable barrels or no barrel matches the lowest ml potion type.")
-            break
-
+    # Iterate until you either run out of gold or all potion types reach TARGET_ML
+    while gold_amount > 0:
+        purchase_made = False  # Track if a purchase is made in this loop
         
+        # Iterate through each potion type with its current ml
+        for ml_to_buy, properties in local_barrels.items():
+            if properties['ml'] >= TARGET_ML:
+                continue  # Skip types already at or above the target
+            
+            # Find all barrels matching the potion type, sorted by price (ascending)
+            matching_barrels = sorted(
+                [b for b in wholesale_catalog if b.potion_type == properties['color_vector']],
+                key=lambda x: x.price
+            )
+            
+            # Attempt to purchase a suitable barrel
+            for barrel in matching_barrels:
+                # Check affordability and if the barrel has stock
+                if barrel.price <= gold_amount and barrel.quantity > 0:
+                    barrels_needed = (TARGET_ML - properties['ml']) // barrel.ml_per_barrel
+                    barrels_to_buy = min(barrels_needed, barrel.quantity)  # Max barrels to buy
+                    
+                    if barrels_to_buy > 0:
+                        # Add barrels to purchase list
+                        barrels_to_purchase.append({
+                            "sku": barrel.sku,
+                            "quantity": barrels_to_buy
+                        })
+                        
+                        # Update resources
+                        gold_amount -= barrel.price * barrels_to_buy
+                        properties['ml'] += barrel.ml_per_barrel * barrels_to_buy
+                        barrel.quantity -= barrels_to_buy
+                        purchase_made = True  # A purchase was made
+                        
+                        # Log the purchase
+                        print(f"Purchased {barrels_to_buy} barrel(s) of {barrel.sku} for {ml_to_buy}.")
+                        print(f"Remaining gold: {gold_amount}")
+                        print(f"New ml for {ml_to_buy}: {properties['ml']}")
+                        
+                        break  # Move to the next potion type after a purchase
+        
+        if not purchase_made:
+            print("No more barrels can be purchased within the constraints.")
+            break  # Exit loop if no purchases can be made
+
+    # Output all purchases
     print("Barrels purchased:")
-    for purchased in barrels_to_purchase:
-        print(f"SKU: {purchased['sku']}, Quantity: {purchased['quantity']}")
+    for purchase in barrels_to_purchase:
+        print(f"SKU: {purchase['sku']}, Quantity: {purchase['quantity']}")
 
     return barrels_to_purchase
+
+
+    # return barrels_to_purchase
