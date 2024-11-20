@@ -46,7 +46,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         elif barrel.potion_type == [0,0,0,1]:
             barrel_dark_ml += barrel.ml_per_barrel * barrel.quantity
 
-    print(f"Calculated ml amounts purchased - Red: {barrel_red_ml}, Green: {barrel_green_ml}, Blue: {barrel_blue_ml}, Dark: {barrel_dark_ml}")
+    print(f"Calculated ml amounts - Red: {barrel_red_ml}, Green: {barrel_green_ml}, Blue: {barrel_blue_ml}, Dark: {barrel_dark_ml}")
     print(f"Total gold spent: {gold_price}")
     
     with db.engine.begin() as connection:
@@ -91,6 +91,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold), 0) AS total_gold FROM gold_tracker")).fetchone()
     gold_amount = result_gold.total_gold
 
+    barrels_to_purchase = []
     # Inventory types and maximum ml allowed for each type
     local_barrels = {
         'red': {'ml': result_barrel.red_ml, 'color_vector': [1, 0, 0, 0]},
@@ -99,42 +100,42 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         'dark': {'ml': result_barrel.dark_ml, 'color_vector': [0, 0, 0, 1]}
     }
 
-    
-    barrels_to_purchase = []
-
+    #my logic is to buy barrels till i have equlal amount of ml across all potion tyes
     while gold_amount > 0:
-        
+
         ml_to_buy = min(local_barrels,key=lambda k: local_barrels[k]['ml'])
         properties = local_barrels[ml_to_buy]
 
-            #add a money logic check if brarrel amount is equal and gold is 0
-            # if all(properties['ml'] == min_ml_value for properties in local_barrels.values()):
-            #     break 
+        #add a money logic check if brarrel amount is equal and gold is 0
+        # if all(properties['ml'] == min_ml_value for properties in local_barrels.values()):
+        #     break 
 
         bool_logic = False
-            # Loop through each barrel type in the shuffled catalog
+        # Loop through each barrel type in the shuffled catalog
         for barrel in wholesale_catalog:
-            # Check affordability of barrel
-            if barrel.potion_type == properties ['color_vector'] and barrel.price <= gold_amount:
-                barrels_to_purchase.append({
+            if "mini" not in barrel.sku.lower():
+        # Check affordability of barrel
+                if barrel.potion_type == properties ['color_vector'] and barrel.price <= gold_amount:
+                    barrels_to_purchase.append({
                                     "sku": barrel.sku,
                                     "quantity": 1
                                 })
-                gold_amount -=barrel.price
-                properties['ml'] +=barrel.ml_per_barrel
-                bool_logic = True
+                    gold_amount -=barrel.price
+                    properties['ml'] +=barrel.ml_per_barrel
+                    bool_logic = True
 
                     # Print the purchased barrel for tracking
-                print(f"Purchased 1 barrel of {barrel.sku} for potion type {ml_to_buy}.")
-                print(f"Remaining gold: {gold_amount}")
-                print(f"New ml for {ml_to_buy}: {properties['ml']}")
-                break  # Exit the loop once a barrel is purchased
+                    print(f"Purchased 1 barrel of {barrel.sku} for potion type {ml_to_buy}.")
+                    print(f"Remaining gold: {gold_amount}")
+                    print(f"New ml for {ml_to_buy}: {properties['ml']}")
+                    break  # Exit the loop once a barrel is purchased
 
-            if not bool_logic:
-                print("No more affordable barrels or no barrel matches the lowest ml potion type.")
-                break
+        if not bool_logic:
+            print("No more affordable barrels or no barrel matches the lowest ml potion type.")
+            break
 
-    
+        
+    print("Barrels purchased:")
     for purchased in barrels_to_purchase:
         print(f"SKU: {purchased['sku']}, Quantity: {purchased['quantity']}")
 

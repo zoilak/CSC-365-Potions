@@ -96,7 +96,8 @@ def get_bottle_plan():
                     ORDER BY random();"""
                         )).fetchall()
        
-    #a dictionary with color as key and ml as quantity
+       #returns a dictionary with color as key and ml as quantity
+
     ml_inventory = {
         "red": result_ml.red_ml,
         "blue": result_ml.blue_ml,
@@ -115,48 +116,52 @@ def get_bottle_plan():
     #decided to use a simpler logic/ might go back to my previous bottling logic
     #for row (potion) from db
     #put a while loop over all of it to add one potion at a time, fill all of them evenly'
-    max_potions = 50
     total_potion_count = 0
     potion_made = True
-    while potion_made:
-        potion_made = False
-        for row in result_potion:
+    while total_potion_count < 50:
+        while potion_made:
+            potion_made = False
+            for row in result_potion:
 
-            red = row.red_ml
-            green = row.green_ml
-            blue = row.blue_ml
-            dark = row.dark_ml
-            name = row.name
+                sku = row.sku
+                cost = row.cost
+                red = row.red_ml
+                green = row.green_ml
+                blue = row.blue_ml
+                dark = row.dark_ml
+                name = row.name
 
-            if total_potion_count >= max_potions:
-                print("Potion-making limit reached.")
-                return bottled_up 
-                 
-            potion_mix =  [red, green, blue, dark]
+                #stop making yellow potions
+                #if (red != 50 and green !=50):         
+
+                    #if that potion count is 0
+                
+            
+                potion_mix =  [red, green, blue, dark]
 
                 #check if i have enough to make that potion
-            if (red<= ml_inventory['red'] and blue<= ml_inventory['blue'] 
-                and green<=ml_inventory['green'] and dark<= ml_inventory['dark']):
+                if (red<= ml_inventory['red'] and blue<= ml_inventory['blue'] 
+                    and green<=ml_inventory['green'] and dark<= ml_inventory['dark']):
 
 
-                    ml_inventory["red"] -= red 
-                    ml_inventory["green"] -= green
-                    ml_inventory["blue"] -= blue
-                    ml_inventory["dark"] -= dark 
+                        ml_inventory["red"] -= red 
+                        ml_inventory["green"] -= green
+                        ml_inventory["blue"] -= blue
+                        ml_inventory["dark"] -= dark 
 
 
-                    bottled_up.append({
-                        "potion_type": potion_mix,
-                        "quantity": 1
-                    })
-                    print(f"Just made 1 potion {name}. Remaining ml: red={ml_inventory['red']}, green={ml_inventory['green']}, blue={ml_inventory['blue']}, dark={ml_inventory['dark']}")
-                    potion_made = True
-                    total_potion_count +=1
-            else:
-                print(f"Not enough ml for {name}. Required: red={red}, green={green}, blue={blue}, dark={dark}")
+                        bottled_up.append({
+                            "potion_type": potion_mix,
+                            "quantity": 1
+                        })
+                        print(f"Just made 1 potion {name}. Remaining ml: red={ml_inventory['red']}, green={ml_inventory['green']}, blue={ml_inventory['blue']}, dark={ml_inventory['dark']}")
+                        potion_made = True
+                        total_potion_count +=1
+                else:
+                    print(f"Not enough ml for {name}. Required: red={red}, green={green}, blue={blue}, dark={dark}")
 
 
-        
+    
     return bottled_up
 
 if __name__ == "__main__":
