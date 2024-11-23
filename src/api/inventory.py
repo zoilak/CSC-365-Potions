@@ -81,32 +81,32 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
 
     with db.engine.begin() as connection:
         
-        result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).scalar()
+        #result_gold = connection.execute(sqlalchemy.text("SELECT COALESCE(SUM(gold),0) as gold_amount FROM gold_tracker")).scalar()
        
-        if (result_gold >2000):
+        
 
-            if (capacity_purchase.potion_capacity!=0):
-                connection.execute(sqlalchemy.text(""" 
-                                                            INSERT INTO gold_tracker (gold)
-                                                            VALUES (:gold)
-                                                        """), {"gold": -cost})
-                
-                connection.execute(sqlalchemy.text(
-                    "UPDATE capacity_plan SET potion_capacity = potion_capacity + :potion_capacity"),
-                    {"potion_capacity": capacity_purchase.potion_capacity})
-                        
-            if (capacity_purchase.ml_capacity !=0):
+        if (capacity_purchase.potion_capacity!=0):
+            connection.execute(sqlalchemy.text(""" 
+                                                        INSERT INTO gold_tracker (gold)
+                                                        VALUES (:gold)
+                                                    """), {"gold": -cost})
             
-            # Deduct the gold from the gold tracker
-                connection.execute(sqlalchemy.text(""" 
-                                                            INSERT INTO gold_tracker (gold)
-                                                            VALUES (:gold)
-                                                        """), {"gold": -cost})
-                
+            connection.execute(sqlalchemy.text(
+                "UPDATE capacity_plan SET potion_capacity = potion_capacity + :potion_capacity"),
+                {"potion_capacity": capacity_purchase.potion_capacity})
+                    
+        if (capacity_purchase.ml_capacity !=0):
+        
+        # Deduct the gold from the gold tracker
+            connection.execute(sqlalchemy.text(""" 
+                                                        INSERT INTO gold_tracker (gold)
+                                                        VALUES (:gold)
+                                                    """), {"gold": -cost})
+            
 
-                # Increase potion and ml capacities
-                connection.execute(sqlalchemy.text(
-                    "UPDATE capacity_plan SET ml_capacity = ml_capacity + :ml_capacity"),
-                    {"ml_capacity": capacity_purchase.ml_capacity})
+            # Increase potion and ml capacities
+            connection.execute(sqlalchemy.text(
+                "UPDATE capacity_plan SET ml_capacity = ml_capacity + :ml_capacity"),
+                {"ml_capacity": capacity_purchase.ml_capacity})
                 
     return "OK"
